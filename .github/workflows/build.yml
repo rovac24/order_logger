@@ -48,7 +48,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: InvoiceUploader-Windows
-          path: dist/InvoiceUploader.exe
+          path: dist/InvoiceUploader/InvoiceUploader.exe
 
   build-macos:
     runs-on: macos-latest
@@ -83,4 +83,4 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: InvoiceUploader-macOS
-          path: dist/InvoiceUploader.app
+          path: dist/InvoiceUploader/InvoiceUploader.app
