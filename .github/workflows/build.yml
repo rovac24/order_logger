@@ -41,8 +41,6 @@ jobs:
             --name OrderLogger `
             --icon icon.ico `
             --add-data "credentials.json;." `
-            --add-data "icon_light.ico;." `
-            --add-data "icon_dark.ico;." `
             gui_app.py
 
 
@@ -77,7 +75,7 @@ jobs:
 
       - name: Build macOS App
         run: |
-          pyinstaller --clean --windowed --name InvoiceUploader \
+          pyinstaller --clean --windowed --name OrderLogger \
             --add-data "credentials.json:." \
             gui_app.py
 
