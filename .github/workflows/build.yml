@@ -32,14 +32,19 @@ jobs:
           GOOGLE_CREDENTIALS_JSON: ${{ secrets.GOOGLE_CREDENTIALS_JSON }}
 
       - name: Build Windows EXE
+        shell: pwsh
         run: |
-          pyinstaller --clean --onefile --windowed ^
-            --name InvoiceUploader ^
-            --icon icon.ico ^
-            --add-data "credentials.json;." ^
-            --add-data "icon_light.ico;." ^
-            --add-data "icon_dark.ico;." ^
+          pyinstaller `
+            --clean `
+            --onefile `
+            --windowed `
+            --name OrderLogger `
+            --icon icon.ico `
+            --add-data "credentials.json;." `
+            --add-data "icon_light.ico;." `
+            --add-data "icon_dark.ico;." `
             gui_app.py
+
 
       - name: Upload Windows artifact
         uses: actions/upload-artifact@v4
