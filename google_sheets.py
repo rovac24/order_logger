@@ -67,13 +67,14 @@ def append_invoice_row(service, data: dict):
         timestamp_utc,                         # F Timestamp UTC
         data.get("total_due", ""),             # G Total Due
         data.get("license_number", ""),        # H License Number
+        data.get("client", ""),                # I Client
     ]
 
     body = {"values": [row]}
 
     service.spreadsheets().values().append(
         spreadsheetId=SPREADSHEET_ID,
-        range=f"{SHEET_NAME}!A:H",
+        range=f"{SHEET_NAME}!A:I",
         valueInputOption="USER_ENTERED",
         insertDataOption="INSERT_ROWS",
         body=body,
