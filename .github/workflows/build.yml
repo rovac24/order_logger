@@ -73,9 +73,11 @@ jobs:
         env:
           GOOGLE_CREDENTIALS_JSON: ${{ secrets.GOOGLE_CREDENTIALS_JSON }}
 
-      - name: Build macOS App
+      - name: Build macOS Universal App
         run: |
-          pyinstaller --clean --windowed --name OrderLogger \
+          pyinstaller --clean --windowed \
+            --target-arch universal2 \
+            --name OrderLogger \
             --add-data "credentials.json:." \
             gui_app.py
 
