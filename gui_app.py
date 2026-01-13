@@ -121,11 +121,12 @@ def process_and_upload():
 
 
 # ---------------- UI ----------------
-APP_BG = "#008080"
+APP_BG = "#FFFFFF"
 root = tk.Tk()
 root.title("Sales Ops Order Logger")
 root.geometry("360x620")
 root.configure(bg=APP_BG)
+root.iconbitmap(resource_path("icon.ico"))
 
 frame = tk.Frame(root, bg=APP_BG)
 frame.pack(padx=10, pady=10)
@@ -142,8 +143,8 @@ user_var = tk.StringVar(value=load_user())
 user_frame = tk.Frame(root)
 user_frame.pack(fill="x", padx=10, pady=10, anchor="w")
 
-tk.Label(user_frame, text="Logged by:", bg=APP_BG, font=("Consolas", 11)).pack(side="left", padx=(0,8))
-tk.Entry(user_frame, textvariable=user_var, width=30).pack(side="left")
+tk.Label(user_frame, text="Logged by:", bg=APP_BG, font=("Consolas", 11, "bold")).pack(side="left", padx=(0,8))
+tk.Entry(user_frame, textvariable=user_var, width=33, font=("Consolas", 10)).pack(side="left")
 
 # --- Title ---
 tk.Label(root, text="Paste invoice data here:", bg=APP_BG, font=("Consolas", 14, "bold")).pack(pady=5)
