@@ -11,7 +11,7 @@ Future<void> uploadToSheets(ParsedInvoice p, selectedUploader) async {
     'customer': p.customerName,
     'edits': 'No',
     'submittedBy': selectedUploader,
-    'dateUtc': p.orderPlacedDate.toIso8601String(),
+    'dateUtc': p.orderPlacedDate,
     'total': p.totalDue.toString(),
     'license': p.licenseNumber,
     'payTo': p.payTo,
