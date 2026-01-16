@@ -5,7 +5,7 @@ class ParsedInvoice {
   final String customerName;
   final String licenseNumber;
   final String state;
-  final DateTime orderPlacedDate;
+  final String orderPlacedDate;
   final double totalDue;
   final String payTo;
 
@@ -27,13 +27,13 @@ ParsedInvoice parseInvoice(String text) {
       .where((l) => l.isNotEmpty)
       .toList();
 
-  String? invoiceNumber;
-  String? customerName;
-  String? licenseNumber;
-  String? state;
-  DateTime? orderPlacedDate;
-  double? totalDue;
-  String? payTo;
+  String invoiceNumber = '';
+  String customerName = '';
+  String licenseNumber = '';
+  String state = '';
+  String orderPlacedDate = '';
+  double totalDue = 0;
+  String payTo = '';
 
   final stateRegex = RegExp(r',\s([A-Z]{2})\s\d{5}');
 
@@ -43,7 +43,7 @@ ParsedInvoice parseInvoice(String text) {
     // ----------------------------
     // Invoice number (#123 or #INV-123)
     // ----------------------------
-    if (invoiceNumber == null &&
+    if (invoiceNumber.isEmpty &&
         RegExp(r'^#(INV-)?\d+').hasMatch(line)) {
       invoiceNumber = line.replaceAll('#', '');
     }
@@ -75,16 +75,17 @@ ParsedInvoice parseInvoice(String text) {
     if (line == 'Total Due' && i + 1 < lines.length) {
       totalDue = double.tryParse(
         lines[i + 1].replaceAll(RegExp(r'[^0-9.]'), ''),
-      );
+      ) ??
+      0;
     }
 
     // ----------------------------
     // State (from address line)
     // ----------------------------
-    if (state == null) {
+    if (state.isEmpty) {
       final match = stateRegex.firstMatch(line);
       if (match != null) {
-        state = match.group(1);
+        state = match.group(1) ?? '';
       }
     }
 
@@ -103,37 +104,21 @@ ParsedInvoice parseInvoice(String text) {
     }
   }
 
-  // ----------------------------
-  // Validation
-  // ----------------------------
-  final missing = <String>[];
-  if (invoiceNumber == null) missing.add('invoiceNumber');
-  if (customerName == null) missing.add('customerName');
-  if (licenseNumber == null) missing.add('licenseNumber');
-  if (state == null) missing.add('state');
-  if (orderPlacedDate == null) missing.add('orderPlacedDate');
-  if (totalDue == null) missing.add('totalDue');
-  if (payTo == null) missing.add('payTo');
-
-  if (missing.isNotEmpty) {
-    throw FormatException('Missing required fields: ${missing.join(', ')}');
-  }
-
   return ParsedInvoice(
-    invoiceNumber: invoiceNumber!,
-    customerName: customerName!,
-    licenseNumber: licenseNumber!,
-    state: state!,
-    orderPlacedDate: orderPlacedDate!,
-    totalDue: totalDue!,
-    payTo: payTo!,
+    invoiceNumber: invoiceNumber,
+    customerName: customerName,
+    licenseNumber: licenseNumber,
+    state: state,
+    orderPlacedDate: orderPlacedDate,
+    totalDue: totalDue,
+    payTo: payTo,
   );
 }
 
 // ===================================================================
 // Date parsing (AM/PM safe, web-safe)
 // ===================================================================
-DateTime? _parseInvoiceDateUtc(String raw) {
+String _parseInvoiceDateUtc(String raw) {
   try {
     final cleaned = raw
         .replaceAll(RegExp(r'\s+'), ' ')
@@ -146,9 +131,34 @@ DateTime? _parseInvoiceDateUtc(String raw) {
 
     final format = DateFormat('MMM d, yyyy h:mm:ss a');
     final local = format.parse(cleaned);
+    final formatted = formatUtcPretty(local);
 
-    return local.toUtc();
+    return formatted;
   } catch (_) {
-    return null;
+    return '';
+  }
+}
+
+String formatUtcPretty(DateTime utc) {
+  final month = DateFormat('MMMM').format(utc);
+  final day = utc.day;
+  final year = utc.year;
+  final time = DateFormat('h:mm a').format(utc);
+
+  return '$month ${_ordinal(day)}, $year at $time UTC';
+}
+
+String _ordinal(int number) {
+  if (number >= 11 && number <= 13) return '${number}th';
+
+  switch (number % 10) {
+    case 1:
+      return '${number}st';
+    case 2:
+      return '${number}nd';
+    case 3:
+      return '${number}rd';
+    default:
+      return '${number}th';
   }
 }
