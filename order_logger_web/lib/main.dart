@@ -22,7 +22,7 @@ class _OrderLoggerAppState extends State<OrderLoggerApp> {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      theme: darkMode ? ThemeData.dark() : ThemeData.light(),
+      theme: darkMode ? ThemeData.light() : ThemeData.dark(),
       home: OrderLoggerPage(
         darkMode: darkMode,
         onToggleTheme: () => setState(() => darkMode = !darkMode),
@@ -106,9 +106,16 @@ class _OrderLoggerPageState extends State<OrderLoggerPage> {
   }
 
   void parseNow(String text) {
-  setState(() {
-    parsed = text.trim().isEmpty ? null : parseInvoice(text);
-
+    setState(() {
+      parsed = text.trim().isEmpty ? null : parseInvoice(text);
+      final missing = missingFields(parsed!);
+      if (missing.isNotEmpty) {
+        setState(() {
+          status = '❌ Missing: ${missing.join(", ")}';
+        });
+      } else {
+        status = '✅ All good here ✅';
+      }
     if (parsed != null) {
       debugPrint('--- PARSED DATA ---');
       debugPrint('Invoice: ${parsed!.invoiceNumber}');
@@ -122,11 +129,11 @@ class _OrderLoggerPageState extends State<OrderLoggerPage> {
   });
 }
 
-
   Future<void> pasteClipboard() async {
     final data = await Clipboard.getData('text/plain');
     controller.text = data?.text ?? '';
     parseNow(controller.text);
+    status = '';
   }
 
   void clearAll() {
@@ -137,15 +144,6 @@ class _OrderLoggerPageState extends State<OrderLoggerPage> {
     });
   }
 
-  bool isValid(ParsedInvoice p) {
-    return p.invoiceNumber.isNotEmpty &&
-        p.customerName.isNotEmpty &&
-        p.licenseNumber.isNotEmpty &&
-        p.totalDue > 0 &&
-        p.state.isNotEmpty &&
-        p.payTo.isNotEmpty;
-  }
-
   List<String> missingFields(ParsedInvoice p) {
   final missing = <String>[];
 
@@ -154,38 +152,37 @@ class _OrderLoggerPageState extends State<OrderLoggerPage> {
   if (p.licenseNumber.isEmpty) missing.add('License Number');
   if (p.totalDue < 0) missing.add('Total Due');
   if (p.state.isEmpty) missing.add('State');
-  if (p.payTo.isEmpty) missing.add('Pay To');
+  if (p.payTo.isEmpty) missing.add('Client');
 
   return missing;
 }
 
   Future<void> upload() async {
+    if (isUploading) return;
     if (selectedUploader == null) {
-      setState(() => error = 'Please select your name');
+      setState(() => status = '⚠ Please select your name before uploading');
       return;
     }
-    setState(() {
-      status = '⏳ Upload started...';
-    });
+    if (parsed == null) {
+      setState(() => status = '❌ No invoice data to upload');
+      return;
+    }
     // Always parse current text before upload
     if (parsed == null && controller.text.trim().isNotEmpty) {
       parsed = parseInvoice(controller.text);
     }
-
-    if (parsed == null) {
-      setState(() => status = '❌ No data parsed');
-      return;
-    }
-
     final missing = missingFields(parsed!);
-
     if (missing.isNotEmpty) {
       setState(() {
         status = '❌ Missing: ${missing.join(", ")}';
       });
       return;
     }
-
+    setState(() {
+      isUploading = true;
+      status = '⏳ Upload started...';
+      error = null;
+    });
     try {
       debugPrint('📤 Sending upload payload...');
       await uploadToSheets(parsed!, selectedUploader);
@@ -193,7 +190,7 @@ class _OrderLoggerPageState extends State<OrderLoggerPage> {
         // ✅ reset everything
         parsed = null;
         controller.clear();
-        status = 'Upload complete ✅';
+        status = '✅ Upload complete';
         isUploading = false;
       });
         // optional: auto-clear success message after 2 seconds
@@ -215,7 +212,7 @@ class _OrderLoggerPageState extends State<OrderLoggerPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Order Logger'),
+        title: const Text('Sales Ops Order Logger', style: TextStyle(fontSize: 24, fontWeight: FontWeight.w600)),
         actions: [
           IconButton(
             icon: Icon(widget.darkMode ? Icons.light_mode : Icons.dark_mode),
@@ -227,12 +224,12 @@ class _OrderLoggerPageState extends State<OrderLoggerPage> {
         padding: const EdgeInsets.all(16),
         child: Column(children: [
               Text(
-                'Logged by',
-                style: Theme.of(context).textTheme.labelLarge,
+                'Logged by:',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
               ),
               const SizedBox(height: 6),
               DropdownButtonFormField<String>(
-                value: selectedUploader,
+                initialValue: selectedUploader,
                 hint: const Text('Select your name'),
                 items: sopsteam
                     .map(
@@ -260,7 +257,7 @@ class _OrderLoggerPageState extends State<OrderLoggerPage> {
                 maxLines: 10,
                 onChanged: parseNow,
                 decoration: const InputDecoration(
-                  labelText: 'Paste invoice text',
+                  labelText: 'Paste invoice data here',
                   border: OutlineInputBorder(),
                 ),
               ),
@@ -280,29 +277,35 @@ class _OrderLoggerPageState extends State<OrderLoggerPage> {
                 ),
                 const Spacer(),
                 ElevatedButton.icon(
-                  onPressed: (parsed == null || isUploading) ? null : upload,
+                  onPressed: isUploading ? null : upload,
                   icon: isUploading
                       ? const SizedBox(
                           width: 16,
                           height: 16,
                           child: CircularProgressIndicator(strokeWidth: 2),
                         )
-                      : const Icon(Icons.upload),
-                  label: Text(isUploading ? 'Uploading...' : 'Upload'),
+                      : const Icon(Icons.upload, size: 24,),
+                  label: Text(isUploading ? 'Sending...' : 'SEND', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: parsed == null ? Colors.blueGrey : const Color.fromARGB(255, 105, 177, 24),
+                    minimumSize: const Size(200, 56), // 👈 width x height
+                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                  ),
+                ),
                 ),
               ]),
             
-              const SizedBox(height: 12),
-            
+              const SizedBox(height: 12),            
               if (status.isNotEmpty)
                 Text(status,
                     style: TextStyle(
                         color: status.startsWith('✅')
                             ? Colors.green
-                            : Colors.red)),
+                            : const Color.fromARGB(255, 221, 62, 149))),
             
-              const SizedBox(height: 12),
-            
+              const SizedBox(height: 12),            
               if (parsed != null)
                 Card(
                   child: Padding(
@@ -310,13 +313,15 @@ class _OrderLoggerPageState extends State<OrderLoggerPage> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
+                        Text('                Sending this:', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
+                        const SizedBox(height: 10),
                         row('Invoice', parsed!.invoiceNumber),
                         row('Customer', parsed!.customerName),
                         row('License', parsed!.licenseNumber),
                         row('Total', parsed!.totalDue.toStringAsFixed(2)),
-                        row('Order UTC', parsed!.orderPlacedDate.toUtc().toIso8601String()),
+                        row('Order UTC', parsed!.orderPlacedDate),
                         row('State', parsed!.state),
-                        row('Pay To', parsed!.payTo),
+                        row('Client', parsed!.payTo),
                       ],
                     ),
                   ),
@@ -333,7 +338,7 @@ class _OrderLoggerPageState extends State<OrderLoggerPage> {
       child: Text(
         '$label: ${missing ? "⚠ Missing" : value}',
         style: TextStyle(
-          color: missing ? Colors.red : null,
+          color: missing ? Color.fromARGB(255, 221, 62, 149) : const Color.fromARGB(255, 48, 105, 190),
           fontWeight: missing ? FontWeight.bold : null,
         ),
       ),
