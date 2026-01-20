@@ -1,0 +1,1 @@
+{"inputs":["C:\\repo\\order_logger\\web\\*\\index.html","C:\\repo\\order_logger\\web\\flutter_bootstrap.js","C:\\flutter\\bin\\cache\\engine.stamp"],"outputs":["C:\\repo\\order_logger\\build\\web\\*\\index.html","C:\\repo\\order_logger\\build\\web\\flutter_bootstrap.js"],"buildKey":"[{\"compileTarget\":\"dart2js\",\"renderer\":\"canvaskit\",\"mainJsPath\":\"main.dart.js\"},{}]"}
