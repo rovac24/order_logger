@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter/services.dart';
 import 'package:order_logger_web/sheets.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'parser.dart';
 
 void main() {
@@ -32,14 +32,14 @@ class _OrderLoggerAppState extends State<OrderLoggerApp> {
 }
 
 class OrderLoggerPage extends StatefulWidget {
-  final bool darkMode;
-  final VoidCallback onToggleTheme;
-
   const OrderLoggerPage({
     super.key,
     required this.darkMode,
     required this.onToggleTheme,
   });
+
+  final bool darkMode;
+  final VoidCallback onToggleTheme;
 
   @override
   State<OrderLoggerPage> createState() => _OrderLoggerPageState();
@@ -212,7 +212,9 @@ class _OrderLoggerPageState extends State<OrderLoggerPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Sales Ops Order Logger', style: TextStyle(fontSize: 24, fontWeight: FontWeight.w600)),
+        title: const Text('Sales Ops Order Logger', 
+        style: TextStyle(fontSize: 24,
+        fontWeight: FontWeight.w600)),
         actions: [
           IconButton(
             icon: Icon(widget.darkMode ? Icons.light_mode : Icons.dark_mode),
@@ -284,11 +286,15 @@ class _OrderLoggerPageState extends State<OrderLoggerPage> {
                           child: CircularProgressIndicator(strokeWidth: 2),
                         )
                       : const Icon(Icons.upload, size: 24,),
-                  label: Text(isUploading ? 'Sending...' : 'SEND', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
+                  label: Text(isUploading ? 'Sending...' : 'SEND', 
+                  style: const TextStyle(fontSize: 18, 
+                  fontWeight: FontWeight.w600)),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: parsed == null ? Colors.blueGrey : const Color.fromARGB(255, 105, 177, 24),
+                    backgroundColor: parsed == null ? Colors.blueGrey :
+                    const Color.fromARGB(255, 105, 177, 24),
                     minimumSize: const Size(200, 56), // 👈 width x height
-                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                    padding: const EdgeInsets.symmetric(horizontal: 24, 
+                    vertical: 16),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(14),
                   ),
@@ -312,7 +318,9 @@ class _OrderLoggerPageState extends State<OrderLoggerPage> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text('                Sending this:', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
+                        const Text('                Sending this:', 
+                        style: TextStyle(fontSize: 18, 
+                        fontWeight: FontWeight.w600)),
                         const SizedBox(height: 10),
                         row('Invoice', parsed!.invoiceNumber),
                         row('Customer', parsed!.customerName),
@@ -337,7 +345,8 @@ class _OrderLoggerPageState extends State<OrderLoggerPage> {
       child: Text(
         '$label: ${missing ? "⚠ Missing" : value}',
         style: TextStyle(
-          color: missing ? const Color.fromARGB(255, 221, 62, 149) : const Color.fromARGB(255, 48, 105, 190),
+          color: missing ? const Color.fromARGB(255, 221, 62, 149) : 
+          const Color.fromARGB(255, 48, 105, 190),
           fontWeight: missing ? FontWeight.bold : null,
         ),
       ),

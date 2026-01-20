@@ -1,12 +1,4 @@
 class InvoiceData {
-  final String invoiceNumber;
-  final String customerName;
-  final String licenseNumber;
-  final String totalDue;
-  final String state;
-  final String orderDateUtc;
-  final String payToEntity;
-
   InvoiceData({
     required this.invoiceNumber,
     required this.customerName,
@@ -16,4 +8,12 @@ class InvoiceData {
     required this.orderDateUtc,
     required this.payToEntity,
   });
+  
+  final String invoiceNumber;
+  final String customerName;
+  final String licenseNumber;
+  final String totalDue;
+  final String state;
+  final String orderDateUtc;
+  final String payToEntity;
 }

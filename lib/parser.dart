@@ -1,14 +1,6 @@
 import 'package:intl/intl.dart';
 
 class ParsedInvoice {
-  final String invoiceNumber;
-  final String customerName;
-  final String licenseNumber;
-  final String state;
-  final String orderPlacedDate;
-  final double totalDue;
-  final String payTo;
-
   ParsedInvoice({
     required this.invoiceNumber,
     required this.customerName,
@@ -18,6 +10,14 @@ class ParsedInvoice {
     required this.totalDue,
     required this.payTo,
   });
+  
+  final String invoiceNumber;
+  final String customerName;
+  final String licenseNumber;
+  final String state;
+  final String orderPlacedDate;
+  final double totalDue;
+  final String payTo;
 }
 
 ParsedInvoice parseInvoice(String text) {
@@ -27,17 +27,17 @@ ParsedInvoice parseInvoice(String text) {
       .where((l) => l.isNotEmpty)
       .toList();
 
-  String invoiceNumber = '';
-  String customerName = '';
-  String licenseNumber = '';
-  String state = '';
-  String orderPlacedDate = '';
+  var invoiceNumber = '';
+  var customerName = '';
+  var licenseNumber = '';
+  var state = '';
+  var orderPlacedDate = '';
   double totalDue = 0;
-  String payTo = '';
+  var payTo = '';
 
   final stateRegex = RegExp(r',\s([A-Z]{2})\s\d{5}');
 
-  for (int i = 0; i < lines.length; i++) {
+  for (var i = 0; i < lines.length; i++) {
     final line = lines[i];
 
     // ----------------------------

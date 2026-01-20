@@ -4,7 +4,7 @@ import 'parser.dart';
 const String sheetUrl =
     'https://script.google.com/macros/s/AKfycbx0cnPVZ7fDYRF1akaSD5J38wKim4syIVEHMC9ulLKSZffojnXrEMkvC8bawsrNzH8RNg/exec';
 
-Future<void> uploadToSheets(ParsedInvoice p, selectedUploader) async {
+Future<void> uploadToSheets(ParsedInvoice p, String? selectedUploader) async {
   final uri = Uri.parse(sheetUrl).replace(queryParameters: {
     'invoice': p.invoiceNumber,
     'state': p.state,

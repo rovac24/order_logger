@@ -1,24 +1,24 @@
 name: order_logger_web
 description: Order Logger Web App
-version: 1.0.0
+publish_to: 'none'
+version: 1.0.0+1
 
 environment:
   sdk: ">=3.10.7 <4.0.0"
 
 dependencies:
+  cupertino_icons: ^1.0.6
   flutter:
     sdk: flutter
-  flutter_test:
-    sdk: flutter
+  
   http: ^1.2.0
   intl: ^0.20.2
-  cupertino_icons: ^1.0.6
   shared_preferences: ^2.2.2
+
+dev_dependencies:
+  flutter_lints: ^3.0.0
+  flutter_test:
+    sdk: flutter
 
 flutter:
   uses-material-design: true
-
-dev_dependencies:
-  flutter_lints: ^3.0.0  # Update to latest version
-  # or use the new package:
-  # lints: ^3.0.0
