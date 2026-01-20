@@ -17,7 +17,7 @@ jobs:
       uses: subosito/flutter-action@v2
       with:
         # Use a newer Flutter version that includes Dart 3.3.0+
-        flutter-version: '3.22.4'  # This includes Dart 3.4.0+
+        flutter-version: '3.38.6'  # This includes Dart 3.4.0+
         channel: 'stable'
         cache: true
         cache-key: flutter-${{ runner.os }}-${{ hashFiles('pubspec.lock') }}
