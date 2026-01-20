@@ -42,6 +42,24 @@ jobs:
         flutter clean
         flutter build web --release
     
+    - name: Create Vercel config files in build
+      run: |
+        # Create vercel.json in build/web
+        cat > build/web/vercel.json << 'EOF'
+        {
+          "version": 2,
+          "routes": [
+            {
+              "src": "/(.*)",
+              "dest": "/$1"
+            }
+          ]
+        }
+        EOF
+        
+        # Create _redirects file for SPA routing
+        echo "/* /index.html 200" > build/web/_redirects
+    
     - name: Upload build artifacts
       uses: actions/upload-artifact@v4
       with:
@@ -60,6 +78,9 @@ jobs:
       with:
         name: web-build
         path: ./public
+
+    - name: List files for verification
+      run: ls -la public/
     
     - name: Create vercel.json for static deployment
       run: |
