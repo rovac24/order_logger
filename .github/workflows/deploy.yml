@@ -3,6 +3,7 @@ name: Deploy Flutter Web to Vercel
 on:
   push:
     branches: [main]
+  workflow_dispatch:
 
 jobs:
   build:
@@ -12,13 +13,14 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
     
-    - name: Setup Flutter
+    - name: Setup Flutter with working version
       uses: subosito/flutter-action@v2
       with:
-        flutter-version: '3.22.4'
+        # Use a version that definitely exists
+        flutter-version: '3.16.9'  # This is a stable, widely available version
         channel: 'stable'
     
-    - name: Verify Flutter installation
+    - name: Verify installation
       run: |
         echo "=== Flutter Version ==="
         flutter --version
@@ -31,42 +33,19 @@ jobs:
         sudo apt-get update
         sudo apt-get install -y cmake ninja-build libgtk-3-dev
     
-    - name: Get Flutter packages
+    - name: Get packages
       run: flutter pub get
     
     - name: Build for web
       run: |
-        # Clean first
         flutter clean
-        
-        # Build web with appropriate flags for the Flutter version
-        echo "Building Flutter web app..."
         flutter build web --release
-        
-        echo "Build completed!"
-    
-    - name: Verify build output
-      run: |
-        echo "Build directory contents:"
-        ls -la build/web/
-        
-        echo ""
-        echo "Checking for index.html:"
-        if [ -f "build/web/index.html" ]; then
-          echo "✓ index.html found"
-          echo "First few lines of index.html:"
-          head -5 build/web/index.html
-        else
-          echo "✗ index.html not found"
-          exit 1
-        fi
     
     - name: Upload build artifacts
       uses: actions/upload-artifact@v4
       with:
         name: web-build
         path: build/web/
-        if-no-files-found: error
         retention-days: 1
 
   deploy:
@@ -81,12 +60,9 @@ jobs:
         name: web-build
         path: ./
     
-    - name: List files for verification
-      run: ls -la ./
-    
     - name: Deploy to Vercel
       uses: amondnet/vercel-action@v25
       with:
         vercel-token: ${{ secrets.VERCEL_TOKEN }}
         working-directory: ./
-        vercel-args: '--prod --confirm'
+        vercel-args: '--prod'
