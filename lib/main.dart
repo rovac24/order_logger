@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter/services.dart';
 import 'package:order_logger_web/sheets.dart';
 import 'parser.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
   runApp(const OrderLoggerApp());
@@ -223,7 +223,7 @@ class _OrderLoggerPageState extends State<OrderLoggerPage> {
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(children: [
-              Text(
+              const Text(
                 'Logged by:',
                 style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
               ),
@@ -284,7 +284,7 @@ class _OrderLoggerPageState extends State<OrderLoggerPage> {
                           child: CircularProgressIndicator(strokeWidth: 2),
                         )
                       : const Icon(Icons.upload, size: 24,),
-                  label: Text(isUploading ? 'Sending...' : 'SEND', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
+                  label: Text(isUploading ? 'Sending...' : 'SEND', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: parsed == null ? Colors.blueGrey : const Color.fromARGB(255, 105, 177, 24),
                     minimumSize: const Size(200, 56), // 👈 width x height
@@ -312,7 +312,7 @@ class _OrderLoggerPageState extends State<OrderLoggerPage> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('                Sending this:', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
+                        const Text('                Sending this:', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
                         const SizedBox(height: 10),
                         row('Invoice', parsed!.invoiceNumber),
                         row('Customer', parsed!.customerName),
@@ -337,7 +337,7 @@ class _OrderLoggerPageState extends State<OrderLoggerPage> {
       child: Text(
         '$label: ${missing ? "⚠ Missing" : value}',
         style: TextStyle(
-          color: missing ? Color.fromARGB(255, 221, 62, 149) : const Color.fromARGB(255, 48, 105, 190),
+          color: missing ? const Color.fromARGB(255, 221, 62, 149) : const Color.fromARGB(255, 48, 105, 190),
           fontWeight: missing ? FontWeight.bold : null,
         ),
       ),
