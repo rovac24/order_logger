@@ -1,9 +1,15 @@
 {
+  "version": 2,
   "builds": [
     {
       "src": "vercel_build.sh",
-      "use": "@vercel/bash"
+      "use": "@vercel/static-build"
     }
   ],
-  "outputDirectory": "public"
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "/public/$1"
+    }
+  ]
 }
