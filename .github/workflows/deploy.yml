@@ -3,23 +3,18 @@ name: Deploy Flutter Web to Vercel
 on:
   push:
     branches: [main]
-  workflow_dispatch:
 
 jobs:
   build:
     runs-on: ubuntu-latest
     
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+    - uses: actions/checkout@v4
     
-    - name: Setup Flutter
+    - name: Setup Flutter (latest stable)
       uses: subosito/flutter-action@v2
       with:
-        # Don't specify version, use latest stable
         channel: 'stable'
-        # Or use 'beta' or 'dev' for newer versions
-        # channel: 'beta'
     
     - name: Verify installation
       run: |
@@ -32,7 +27,7 @@ jobs:
     - name: Install build dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y cmake ninja-build libgtk-3-dev
+        sudo apt-get install -y ninja-build libgtk-3-dev
     
     - name: Get packages
       run: flutter pub get
@@ -42,21 +37,22 @@ jobs:
         flutter clean
         flutter build web --release
     
-    - name: Create Vercel config files in build
+    - name: Create Vercel config
       run: |
-        # Create minimal vercel.json for SPA
-        echo '{
+        # Create vercel.json for SPA routing
+        cat > build/web/vercel.json << 'EOF'
+        {
           "rewrites": [
             { "source": "/(.*)", "destination": "/index.html" }
           ]
-        }' > build/web/vercel.json
+        }
+        EOF
     
     - name: Upload build artifacts
       uses: actions/upload-artifact@v4
       with:
         name: web-build
         path: build/web/
-        retention-days: 1
 
   deploy:
     needs: build
@@ -64,24 +60,26 @@ jobs:
     runs-on: ubuntu-latest
     
     steps:
+    - name: Setup Node.js 20+
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+    
     - name: Download build artifacts
       uses: actions/download-artifact@v4
       with:
         name: web-build
         path: ./public
-
-    - name: List files for verification
-      run: ls -la public/
     
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: '18'
-    
-    - name: Install Vercel CLI
-      run: npm install -g vercel
-    
-    - name: Deploy to Vercel
+    - name: Verify downloaded files
       run: |
-        cd deploy
-        vercel --prod --token=${{ secrets.VERCEL_TOKEN }} --yes
+        echo "Files in public directory:"
+        ls -la public/
+        echo ""
+        echo "Vercel config:"
+        cat public/vercel.json || echo "No vercel.json found"
+    
+    - name: Deploy to Vercel using npx
+      run: |
+        cd public
+        npx vercel@latest --prod --token=${{ secrets.VERCEL_TOKEN }} --yes
