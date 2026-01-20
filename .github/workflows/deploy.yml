@@ -44,21 +44,12 @@ jobs:
     
     - name: Create Vercel config files in build
       run: |
-        # Create vercel.json in build/web
-        cat > build/web/vercel.json << 'EOF'
-        {
-          "version": 2,
-          "routes": [
-            {
-              "src": "/(.*)",
-              "dest": "/$1"
-            }
+        # Create minimal vercel.json for SPA
+        echo '{
+          "rewrites": [
+            { "source": "/(.*)", "destination": "/index.html" }
           ]
-        }
-        EOF
-        
-        # Create _redirects file for SPA routing
-        echo "/* /index.html 200" > build/web/_redirects
+        }' > build/web/vercel.json
     
     - name: Upload build artifacts
       uses: actions/upload-artifact@v4
@@ -82,27 +73,15 @@ jobs:
     - name: List files for verification
       run: ls -la public/
     
-    - name: Create vercel.json for static deployment
-      run: |
-        cat > vercel.json << EOF
-        {
-          "version": 2,
-          "builds": [
-            {
-              "src": "public/**",
-              "use": "@vercel/static"
-            }
-          ],
-          "routes": [
-            {
-              "src": "/(.*)",
-              "dest": "/public/$1"
-            }
-          ]
-        }
-        EOF
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
     
-    - name: Deploy using Vercel CLI
+    - name: Install Vercel CLI
+      run: npm install -g vercel
+    
+    - name: Deploy to Vercel
       run: |
-        npm install -g vercel
-        vercel --token=${{ secrets.VERCEL_TOKEN }} --prod --confirm
+        cd deploy
+        vercel --prod --token=${{ secrets.VERCEL_TOKEN }} --yes
