@@ -229,7 +229,6 @@ class _OrderLoggerPageState extends State<OrderLoggerPage> {
               ),
               const SizedBox(height: 6),
               DropdownButtonFormField<String>(
-                initialValue: selectedUploader == '' ? null : selectedUploader,
                 hint: const Text('Select your name'),
                 items: sopsteam
                     .map(
@@ -346,3 +345,4 @@ class _OrderLoggerPageState extends State<OrderLoggerPage> {
   }
 
 }
+
