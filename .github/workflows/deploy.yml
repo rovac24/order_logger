@@ -59,11 +59,29 @@ jobs:
       uses: actions/download-artifact@v4
       with:
         name: web-build
-        path: ./
+        path: ./public
     
-    - name: Deploy to Vercel
-      uses: amondnet/vercel-action@v25
-      with:
-        vercel-token: ${{ secrets.VERCEL_TOKEN }}
-        working-directory: ./
-        vercel-args: '--prod'
+    - name: Create vercel.json for static deployment
+      run: |
+        cat > vercel.json << EOF
+        {
+          "version": 2,
+          "builds": [
+            {
+              "src": "public/**",
+              "use": "@vercel/static"
+            }
+          ],
+          "routes": [
+            {
+              "src": "/(.*)",
+              "dest": "/public/$1"
+            }
+          ]
+        }
+        EOF
+    
+    - name: Deploy using Vercel CLI
+      run: |
+        npm install -g vercel
+        vercel --token=${{ secrets.VERCEL_TOKEN }} --prod --confirm
