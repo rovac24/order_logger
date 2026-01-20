@@ -1,0 +1,37 @@
+# Build files
+/build/
+/public/
+
+# Vercel
+.vercel/
+
+# IDE files
+.vscode/
+.idea/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Flutter/Dart
+.dart_tool/
+.packages
+.pub-cache/
+.pub/
+.flutter-plugins
+.flutter-plugins-dependencies
+.fvm/
+
+# Coverage
+coverage/
+
+# Android
+*.apk
+*.aab
+*.keystore
+
+# iOS
+*.ipa
+*.p12
+*.mobileprovision
+*.xcworkspace
