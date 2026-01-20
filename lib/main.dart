@@ -222,118 +222,125 @@ class _OrderLoggerPageState extends State<OrderLoggerPage> {
           )
         ],
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(children: [
-              const Text(
-                'Logged by:',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
-              ),
-              const SizedBox(height: 6),
-              DropdownButtonFormField<String>(
-                hint: const Text('Select your name'),
-                items: sopsteam
-                    .map(
-                      (name) => DropdownMenuItem(
-                        value: name,
-                        child: Text(name),
-                      ),
-                    )
-                    .toList(),
-                onChanged: (value) {
-                  if (value == null) return;
-                  setState(() => selectedUploader = value);
-                  _saveUploader(value);
-                },
-                decoration: InputDecoration(
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  isDense: true,
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(children: [
+                const Text(
+                  'Logged by:',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
                 ),
-              ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: controller,
-                maxLines: 10,
-                onChanged: parseNow,
-                decoration: const InputDecoration(
-                  labelText: 'Paste invoice data here',
-                  border: OutlineInputBorder(),
-                ),
-              ),
-              const SizedBox(height: 10),
-            
-              Row(children: [
-                ElevatedButton.icon(
-                  icon: const Icon(Icons.paste),
-                  label: const Text('Paste'),
-                  onPressed: pasteClipboard,
-                ),
-                const SizedBox(width: 8),
-                OutlinedButton.icon(
-                  icon: const Icon(Icons.clear),
-                  label: const Text('Clear'),
-                  onPressed: clearAll,
-                ),
-                const Spacer(),
-                ElevatedButton.icon(
-                  onPressed: isUploading ? null : upload,
-                  icon: isUploading
-                      ? const SizedBox(
-                          width: 16,
-                          height: 16,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : const Icon(Icons.upload, size: 24,),
-                  label: Text(isUploading ? 'Sending...' : 'SEND', 
-                  style: const TextStyle(fontSize: 18, 
-                  fontWeight: FontWeight.w600)),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: parsed == null ? Colors.blueGrey :
-                    const Color.fromARGB(255, 105, 177, 24),
-                    minimumSize: const Size(200, 56), // 👈 width x height
-                    padding: const EdgeInsets.symmetric(horizontal: 24, 
-                    vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14),
+                const SizedBox(height: 6),
+                DropdownButtonFormField<String>(
+                  hint: const Text('Select your name'),
+                  items: sopsteam
+                      .map(
+                        (name) => DropdownMenuItem(
+                          value: name,
+                          child: Text(name),
+                        ),
+                      )
+                      .toList(),
+                  onChanged: (value) {
+                    if (value == null) return;
+                    setState(() => selectedUploader = value);
+                    _saveUploader(value);
+                  },
+                  decoration: InputDecoration(
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    isDense: true,
                   ),
                 ),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: controller,
+                  maxLines: 10,
+                  onChanged: parseNow,
+                  decoration: const InputDecoration(
+                    labelText: 'Paste invoice data here',
+                    border: OutlineInputBorder(),
+                  ),
                 ),
-              ]),
-            
-              const SizedBox(height: 12),            
-              if (status.isNotEmpty)
-                Text(status,
-                    style: TextStyle(
-                        color: status.startsWith('✅')
-                            ? Colors.green
-                            : const Color.fromARGB(255, 221, 62, 149))),
-            
-              const SizedBox(height: 12),            
-              if (parsed != null)
-                Card(
-                  child: Padding(
-                    padding: const EdgeInsets.all(12),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text('                Sending this:', 
-                        style: TextStyle(fontSize: 18, 
-                        fontWeight: FontWeight.w600)),
-                        const SizedBox(height: 10),
-                        row('Invoice', parsed!.invoiceNumber),
-                        row('Customer', parsed!.customerName),
-                        row('License', parsed!.licenseNumber),
-                        row('Total', parsed!.totalDue.toStringAsFixed(2)),
-                        row('Order UTC', parsed!.orderPlacedDate),
-                        row('State', parsed!.state),
-                        row('Client', parsed!.payTo),
-                      ],
+                const SizedBox(height: 10),
+              
+                Row(children: [
+                  ElevatedButton.icon(
+                    icon: const Icon(Icons.paste),
+                    label: const Text('Paste'),
+                    onPressed: pasteClipboard,
+                  ),
+                  const SizedBox(width: 8),
+                  OutlinedButton.icon(
+                    icon: const Icon(Icons.clear),
+                    label: const Text('Clear'),
+                    onPressed: clearAll,
+                  ),
+                  const Spacer(),
+                  ElevatedButton.icon(
+                    onPressed: isUploading ? null : upload,
+                    icon: isUploading
+                        ? const SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Icon(Icons.upload, size: 24,),
+                    label: Text(isUploading ? 'Sending...' : 'SEND', 
+                    style: const TextStyle(fontSize: 18, 
+                    fontWeight: FontWeight.w600)),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: parsed == null ? Colors.blueGrey :
+                      const Color.fromARGB(255, 105, 177, 24),
+                      minimumSize: const Size(200, 56), // 👈 width x height
+                      padding: const EdgeInsets.symmetric(horizontal: 24, 
+                      vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14),
                     ),
                   ),
-                ),
-            ]),
+                  ),
+                ]),
+              
+                const SizedBox(height: 12),            
+                if (status.isNotEmpty)
+                  Text(status,
+                      style: TextStyle(
+                          color: status.startsWith('✅')
+                              ? Colors.green
+                              : const Color.fromARGB(255, 221, 62, 149))),
+              
+                const SizedBox(height: 12),            
+                if (parsed != null)
+                  Expanded(
+                    child: SingleChildScrollView(
+                      padding: const EdgeInsets.all(16),
+                      child: Card(
+                        child: Padding(
+                          padding: const EdgeInsets.all(12),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text('                Sending this:', 
+                              style: TextStyle(fontSize: 18, 
+                              fontWeight: FontWeight.w600)),
+                              const SizedBox(height: 10),
+                              row('Invoice', parsed!.invoiceNumber),
+                              row('Customer', parsed!.customerName),
+                              row('License', parsed!.licenseNumber),
+                              row('Total', parsed!.totalDue.toStringAsFixed(2)),
+                              row('Order UTC', parsed!.orderPlacedDate),
+                              row('State', parsed!.state),
+                              row('Client', parsed!.payTo),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+              ]),
+        ),
       ),
     );
   }
