@@ -1,7 +1,9 @@
 {
-  "buildCommand": "bash ./vercel_build.sh",
-  "outputDirectory": "build/web",
-  "routes": [
-    { "src": "/(.*)", "dest": "/index.html" }
-  ]
+  "builds": [
+    {
+      "src": "vercel_build.sh",
+      "use": "@vercel/bash"
+    }
+  ],
+  "outputDirectory": "public"
 }
