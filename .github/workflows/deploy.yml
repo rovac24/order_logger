@@ -13,12 +13,13 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
     
-    - name: Setup Flutter with working version
+    - name: Setup Flutter
       uses: subosito/flutter-action@v2
       with:
-        # Use a version that definitely exists
-        flutter-version: '3.16.9'  # This is a stable, widely available version
+        # Don't specify version, use latest stable
         channel: 'stable'
+        # Or use 'beta' or 'dev' for newer versions
+        # channel: 'beta'
     
     - name: Verify installation
       run: |
