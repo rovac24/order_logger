@@ -3,13 +3,22 @@ name: Deploy Flutter Web to Vercel
 on:
   push:
     branches: [main]
+  # Remove this trigger to prevent conflict:
+  # pull_request:  # ← Comment out or remove
 
 jobs:
-  build:
+  deploy:
     runs-on: ubuntu-latest
+    
+    # Add environment variable to skip Vercel
+    env:
+      SKIP_VERCEL: true
     
     steps:
     - uses: actions/checkout@v4
+      with:
+        # This helps prevent Vercel from detecting the push
+        fetch-depth: 0
     
     - name: Setup Flutter (latest stable)
       uses: subosito/flutter-action@v2
