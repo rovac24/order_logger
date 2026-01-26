@@ -42,4 +42,7 @@ jobs:
     - name: Deploy to Vercel
       run: |
         cd build/web
-        vercel --prod --token=${{ secrets.VERCEL_TOKEN }} --yes
+        vercel --prod \
+          --token=${{ secrets.VERCEL_TOKEN }} \
+          --yes \
+          --name=order-logger  # Force project name to 'order-logger'
