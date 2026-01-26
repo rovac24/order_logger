@@ -266,18 +266,19 @@ class _OrderLoggerPageState extends State<OrderLoggerPage> {
                 const SizedBox(height: 10),
               
                 Row(children: [
+                  const Spacer(),
+                  OutlinedButton.icon(
+                    icon: const Icon(Icons.clear),
+                    label: const Text('Clear'),
+                    onPressed: clearAll,
+                  ),
+                  const SizedBox(width: 8),
                   ElevatedButton.icon(
                     icon: const Icon(Icons.paste),
                     label: const Text('Paste'),
                     onPressed: pasteClipboard,
                   ),
                   const SizedBox(width: 8),
-                  OutlinedButton.icon(
-                    icon: const Icon(Icons.clear),
-                    label: const Text('Clear'),
-                    onPressed: clearAll,
-                  ),
-                  const Spacer(),
                   ElevatedButton.icon(
                     onPressed: isUploading ? null : upload,
                     icon: isUploading
