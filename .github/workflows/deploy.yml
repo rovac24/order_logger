@@ -1,85 +1,46 @@
-name: Deploy Flutter Web to Vercel
+name: Deploy Flutter Web
 
 on:
   push:
     branches: [main]
 
 jobs:
-  build:
+  deploy:
     runs-on: ubuntu-latest
     
     steps:
     - uses: actions/checkout@v4
     
-    - name: Setup Flutter (latest stable)
+    - name: Setup Flutter
       uses: subosito/flutter-action@v2
       with:
         channel: 'stable'
     
-    - name: Verify installation
-      run: |
-        echo "=== Flutter Version ==="
-        flutter --version
-        echo ""
-        echo "=== Dart Version ==="
-        dart --version
-    
-    - name: Install build dependencies
+    - name: Install dependencies
       run: |
         sudo apt-get update
         sudo apt-get install -y ninja-build libgtk-3-dev
+        flutter pub get
     
-    - name: Get packages
-      run: flutter pub get
-    
-    - name: Build for web
+    - name: Build web
       run: |
         flutter clean
         flutter build web --release
     
     - name: Create Vercel config
       run: |
-        # Create vercel.json for SPA routing
-        cat > build/web/vercel.json << 'EOF'
-        {
-          "rewrites": [
-            { "source": "/(.*)", "destination": "/index.html" }
-          ]
-        }
-        EOF
+        echo '{"rewrites":[{"source":"/(.*)","destination":"/index.html"}]}' > build/web/vercel.json
     
-    - name: Upload build artifacts
-      uses: actions/upload-artifact@v4
-      with:
-        name: web-build
-        path: build/web/
-
-  deploy:
-    needs: build
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    runs-on: ubuntu-latest
-    
-    steps:
-    - name: Setup Node.js 20+
+    - name: Setup Node.js and install Vercel CLI
       uses: actions/setup-node@v4
       with:
         node-version: '20'
+        cache: 'npm'
     
-    - name: Download build artifacts
-      uses: actions/download-artifact@v4
-      with:
-        name: web-build
-        path: ./public
+    - name: Install Vercel CLI globally
+      run: npm install -g vercel@latest
     
-    - name: Verify downloaded files
+    - name: Deploy to Vercel
       run: |
-        echo "Files in public directory:"
-        ls -la public/
-        echo ""
-        echo "Vercel config:"
-        cat public/vercel.json || echo "No vercel.json found"
-    
-    - name: Deploy to Vercel using npx
-      run: |
-        cd public
-        npx vercel@latest --prod --token=${{ secrets.VERCEL_TOKEN }} --yes
+        cd build/web
+        vercel --prod --token=${{ secrets.VERCEL_TOKEN }} --yes
