@@ -260,6 +260,12 @@
       "languageVersion": "3.5"
     },
     {
+      "name": "timezone",
+      "rootUri": "file:///C:/Users/headq/AppData/Local/Pub/Cache/hosted/pub.dev/timezone-0.9.4",
+      "packageUri": "lib/",
+      "languageVersion": "2.19"
+    },
+    {
       "name": "typed_data",
       "rootUri": "file:///C:/Users/headq/AppData/Local/Pub/Cache/hosted/pub.dev/typed_data-1.4.0",
       "packageUri": "lib/",

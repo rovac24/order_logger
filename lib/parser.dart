@@ -1,4 +1,6 @@
+import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:timezone/timezone.dart' as tz;
 
 class ParsedInvoice {
   ParsedInvoice({
@@ -120,23 +122,62 @@ ParsedInvoice parseInvoice(String text) {
 // ===================================================================
 String _parseInvoiceDateUtc(String raw) {
   try {
-    final cleaned = raw
-        .replaceAll(RegExp(r'\s+'), ' ')
-        .replaceAll(' a.m.', ' AM')
-        .replaceAll(' p.m.', ' PM')
-        .replaceAll(' am', ' AM')
-        .replaceAll(' pm', ' PM')
+    // Extract timezone
+    final tzMatch = RegExp(r'\s+(EST|EDT|PST|PDT|CST|CDT|MST|MDT)$', 
+        caseSensitive: false).firstMatch(raw);
+    final tzAbbr = tzMatch?.group(1)?.toUpperCase() ?? 'EST';
+    
+    // Remove timezone
+    final withoutTz = raw.replaceAll(
+        RegExp(r'\s+(EST|EDT|PST|PDT|CST|CDT|MST|MDT)$', caseSensitive: false), '');
+    
+    // Clean the date
+    final cleaned = withoutTz
         .replaceAll('.', '')
+        .replaceAllMapped(RegExp(r'(\d+)\s*(a\.?m\.?|p\.?m\.?)', caseSensitive: false),
+            (m) => '${m.group(1)} ${m.group(2)!.replaceAll('.', '')
+            .toUpperCase()}')
+        .replaceAll(RegExp(r'\s+'), ' ')
         .trim();
 
+    // Parse date
     final format = DateFormat('MMM d, yyyy h:mm:ss a');
-    final local = format.parse(cleaned);
-    final formatted = formatUtcPretty(local);
-
-    return formatted;
-  } catch (_) {
+    final parsed = format.parse(cleaned);
+    
+    // Map abbreviations to IANA timezone names
+    final tzMap = {
+      'EST': 'America/New_York',
+      'EDT': 'America/New_York',
+      'PST': 'America/Los_Angeles', 
+      'PDT': 'America/Los_Angeles',
+      'CST': 'America/Chicago',
+      'CDT': 'America/Chicago',
+      'MST': 'America/Denver',
+      'MDT': 'America/Denver',
+    };
+    
+    final locationName = tzMap[tzAbbr] ?? 'America/New_York';
+    final location = tz.getLocation(locationName);
+    
+    // CORRECT WAY: Create TZDateTime from components
+    final zonedTime = tz.TZDateTime(
+      location,
+      parsed.year,
+      parsed.month,
+      parsed.day,
+      parsed.hour,
+      parsed.minute,
+      parsed.second,
+    );
+    
+    // Convert to UTC
+    final utcTime = zonedTime.toUtc();
+    
+    return formatUtcPretty(utcTime);
+  } catch (e) {
+    debugPrint('Error parsing "$raw": $e');
     return '';
-  }
+  }  
 }
 
 String formatUtcPretty(DateTime utc) {

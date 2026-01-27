@@ -11,7 +11,8 @@
         "flutter",
         "http",
         "intl",
-        "shared_preferences"
+        "shared_preferences",
+        "timezone"
       ],
       "devDependencies": [
         "flutter_lints",
@@ -41,6 +42,13 @@
       "version": "3.0.2",
       "dependencies": [
         "lints"
+      ]
+    },
+    {
+      "name": "timezone",
+      "version": "0.9.4",
+      "dependencies": [
+        "path"
       ]
     },
     {

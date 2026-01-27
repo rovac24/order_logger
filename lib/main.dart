@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:order_logger_web/sheets.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:timezone/data/latest.dart' as tz;
 import 'parser.dart';
 
 void main() {
+  tz.initializeTimeZones();
   runApp(const OrderLoggerApp());
 }
 
