@@ -2,7 +2,7 @@ import 'package:http/http.dart' as http;
 import 'parser.dart';
 
 const String sheetUrl =
-    'https://script.google.com/macros/s/AKfycbwzlukBtYnuz0GeLq2Yg_Os-Z_28-GhMeSt9NvBtpMHzWH0HTEzzhORQgYSJGNn_YgSSA/exec';
+    'https://script.google.com/macros/s/AKfycbz9qrHO_2Z5FF-OnTttbIKeLIPHgiAEMxQmQlK872NNyeNmvnEn91wHTannzQeippLjLw/exec';
 
 Future<void> uploadToSheets(ParsedInvoice p, String? selectedUploader) async {
   final uri = Uri.parse(sheetUrl).replace(queryParameters: {
