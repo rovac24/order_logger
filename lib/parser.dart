@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:timezone/timezone.dart' as tz;
@@ -21,6 +22,59 @@ class ParsedInvoice {
   final double totalDue;
   final String payTo;
 }
+
+const Map<String, String> stateNameToCode = {
+  'ALABAMA': 'AL',
+  'ALASKA': 'AK',
+  'ARIZONA': 'AZ',
+  'ARKANSAS': 'AR',
+  'CALIFORNIA': 'CA',
+  'COLORADO': 'CO',
+  'CONNECTICUT': 'CT',
+  'DELAWARE': 'DE',
+  'FLORIDA': 'FL',
+  'GEORGIA': 'GA',
+  'HAWAII': 'HI',
+  'IDAHO': 'ID',
+  'ILLINOIS': 'IL',
+  'INDIANA': 'IN',
+  'IOWA': 'IA',
+  'KANSAS': 'KS',
+  'KENTUCKY': 'KY',
+  'LOUISIANA': 'LA',
+  'MAINE': 'ME',
+  'MARYLAND': 'MD',
+  'MASSACHUSETTS': 'MA',
+  'MICHIGAN': 'MI',
+  'MINNESOTA': 'MN',
+  'MISSISSIPPI': 'MS',
+  'MISSOURI': 'MO',
+  'MONTANA': 'MT',
+  'NEBRASKA': 'NE',
+  'NEVADA': 'NV',
+  'NEW HAMPSHIRE': 'NH',
+  'NEW JERSEY': 'NJ',
+  'NEW MEXICO': 'NM',
+  'NEW YORK': 'NY',
+  'NORTH CAROLINA': 'NC',
+  'NORTH DAKOTA': 'ND',
+  'OHIO': 'OH',
+  'OKLAHOMA': 'OK',
+  'OREGON': 'OR',
+  'PENNSYLVANIA': 'PA',
+  'RHODE ISLAND': 'RI',
+  'SOUTH CAROLINA': 'SC',
+  'SOUTH DAKOTA': 'SD',
+  'TENNESSEE': 'TN',
+  'TEXAS': 'TX',
+  'UTAH': 'UT',
+  'VERMONT': 'VT',
+  'VIRGINIA': 'VA',
+  'WASHINGTON': 'WA',
+  'WEST VIRGINIA': 'WV',
+  'WISCONSIN': 'WI',
+  'WYOMING': 'WY',
+};
 
 ParsedInvoice parseInvoice(String text) {
   final lines = text
@@ -85,9 +139,33 @@ ParsedInvoice parseInvoice(String text) {
     // State (from address line)
     // ----------------------------
     if (state.isEmpty) {
-      final match = stateRegex.firstMatch(line);
-      if (match != null) {
-        state = match.group(1) ?? '';
+      // final match = stateRegex.firstMatch(line);
+      // if (match != null) {
+      //   state = match.group(1) ?? '';
+      // }
+      final upper = line.toUpperCase();
+
+      // Case 1: City, NV 89014
+      final shortMatch = stateRegex.firstMatch(upper);
+      if (shortMatch != null) {
+        state = shortMatch.group(1) ?? '';
+      }
+
+      // Case 2: City, Nevada 89014
+      for (final entry in stateNameToCode.entries) {
+        if (upper.contains('${entry.key} ') || upper.contains(', ${entry.key}')) {
+          state = entry.value;
+          break;
+        }
+      }
+
+      // Case 3: Header hint like "GTI NV"
+      if (state.isEmpty) {
+        final headerMatch = RegExp(r'\b([A-Z]{2})\b').firstMatch(upper);
+        if (headerMatch != null &&
+            stateNameToCode.values.contains(headerMatch.group(1))) {
+          state = headerMatch.group(1) ?? '';
+        }
       }
     }
 
