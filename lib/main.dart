@@ -57,21 +57,21 @@ class _OrderLoggerPageState extends State<OrderLoggerPage> {
   String? selectedUploader;
 
   final List<String> sopsteam = [
-  'Angel Alonzo',
+  'Angel Daniel Di Alonzo Torres',
   'Arturo Juarez',
-  'Ayesha Reyes',
   'David Salazar',
   'Dusan Markovic',
-  'Emily Funez',
-  'Ernesto Salazar',
+  'Emily Funez Hawit',
+  'Ernesto Salazar Alejos',
   'Juan Bayer',
   'Laura Martinez',
-  'Miguel Barreto',
+  'Maria Camila Gonzalez Montenegro',
+  'Miguel Barreto Diaz',
   'Ognjen Petrovic',
   'Paola Castañon',
   'Rodolfo Valdez',
-  'Ruben Hernandez',
-  'Teodora Ljubičić',
+  'Ruben Hernández Alvarado',
+  'Teodora Ljubičić Mijić',
 ];
 
   @override
