@@ -97,13 +97,42 @@ ParsedInvoice parseInvoice(String text) {
     final line = lines[i];
 
     // ----------------------------
-    // Invoice number (#123 or #INV-123)
+    // Invoice number (#123, 123, SO-123 or #INV-123)
     // ----------------------------
-    if (invoiceNumber.isEmpty &&
-        RegExp(r'^#(INV-)?\d+').hasMatch(line)) {
-      invoiceNumber = line.replaceAll('#', '');
+    if (invoiceNumber.isEmpty) {
+      // Check for SO- prefix first
+      if (line.toUpperCase().startsWith('SO-')) {
+        invoiceNumber = line.replaceAll(RegExp(r'[^0-9]'), '');
+        
+        // Automatically set client to Punch Edibles
+        if (payTo.isEmpty) {
+          payTo = 'Punch Edibles';
+        }
+        // Automatically set License to N/A
+        if (licenseNumber.isEmpty) {
+          licenseNumber = '-';
+        }
+      } 
+      // Existing patterns
+      else {
+        final patterns = [
+          RegExp(r'^#?(?:INV[-]?)?\d+'),  // #123, 123, #INV-123, INV-123
+          RegExp(r'^(?:Invoice|Order)[\s#:-]+\d+', caseSensitive: false),
+          RegExp(r'INV[-]?\d+', caseSensitive: false),
+        ];
+        
+        for (final pattern in patterns) {
+          if (pattern.hasMatch(line)) {
+            invoiceNumber = line.replaceAll(RegExp(r'[^0-9]'), '');
+            break;
+          }
+        }
+      }
+      // If still empty and it's the first line, take any numbers
+      if (invoiceNumber.isEmpty && i == 0) {
+        invoiceNumber = line.replaceAll(RegExp(r'[^0-9]'), '');
+      }
     }
-
     // ----------------------------
     // Customer name
     // ----------------------------
@@ -121,50 +150,53 @@ ParsedInvoice parseInvoice(String text) {
     // ----------------------------
     // Order placed date
     // ----------------------------
-    if (line == 'Order Placed Date' && i + 1 < lines.length) {
-      orderPlacedDate = _parseInvoiceDateUtc(lines[i + 1]);
+    if (orderPlacedDate.isEmpty) {
+    // Check for "Order Placed Date"
+      if (line == 'Order Placed Date' && i + 1 < lines.length) {
+        orderPlacedDate = _parseInvoiceDateUtc(lines[i + 1]);
+      }
+      // Check for "Created At" 
+      else if (line == 'Created At' && i + 1 < lines.length) {
+        // Get the date from the next line
+        var dateStr = lines[i + 1];
+        
+        // Add PST timezone since we know Created At format is PST
+        if (!dateStr.contains(RegExp(r'\s+(EST|PST|CST|MST|EDT|PDT|CDT|MDT)$', caseSensitive: false))) {
+          dateStr = '$dateStr PST';
+        }
+    
+    orderPlacedDate = _parseInvoiceDateUtc(dateStr);
+  }
     }
 
     // ----------------------------
     // Total due
     // ----------------------------
-    if (line == 'Total Due' && i + 1 < lines.length) {
+    if ((line == 'Total Due' || line == 'Total') && i + 1 < lines.length) {
       totalDue = double.tryParse(
         lines[i + 1].replaceAll(RegExp(r'[^0-9.]'), ''),
-      ) ??
-      0;
+      ) ?? 0;
     }
 
     // ----------------------------
     // State (from address line)
     // ----------------------------
     if (state.isEmpty) {
-      // final match = stateRegex.firstMatch(line);
-      // if (match != null) {
-      //   state = match.group(1) ?? '';
-      // }
       final upper = line.toUpperCase();
 
       // Case 1: City, NV 89014
       final shortMatch = stateRegex.firstMatch(upper);
       if (shortMatch != null) {
         state = shortMatch.group(1) ?? '';
-      }
+      } 
 
       // Case 2: City, Nevada 89014
       for (final entry in stateNameToCode.entries) {
-        if (upper.contains('${entry.key} ') || upper.contains(', ${entry.key}')) {
+        if (upper.contains('${entry.key} ') || 
+        upper.contains(', ${entry.key}')) 
+        {
           state = entry.value;
           break;
-        }
-      }
-
-      // Case 3: Header hint like "GTI NV"
-      if (state.isEmpty) {
-        final headerMatch = RegExp(r'\b([A-Z]{2})\b').firstMatch(upper);
-        if (headerMatch != null &&
-            stateNameToCode.values.contains(headerMatch.group(1))) {
-          state = headerMatch.group(1) ?? '';
         }
       }
     }
@@ -176,7 +208,8 @@ ParsedInvoice parseInvoice(String text) {
       final next = lines[i + 1].toUpperCase();
 
       if (next.contains('GTI') ||
-          next.contains('GREEN THUMB')) {
+          next.contains('GREEN THUMB') || 
+          next.contains('FIORELLO PHARMACEUTICALS')) {
         payTo = 'GTI';
       } else if (next.contains('ASCEND')) {
         payTo = 'Ascend';
@@ -212,15 +245,24 @@ String _parseInvoiceDateUtc(String raw) {
     // Clean the date
     final cleaned = withoutTz
         .replaceAll('.', '')
+        .replaceAll('-', '')
         .replaceAllMapped(RegExp(r'(\d+)\s*(a\.?m\.?|p\.?m\.?)', caseSensitive: false),
             (m) => '${m.group(1)} ${m.group(2)!.replaceAll('.', '')
             .toUpperCase()}')
         .replaceAll(RegExp(r'\s+'), ' ')
         .trim();
 
+    DateTime parsed;
     // Parse date
-    final format = DateFormat('MMM d, yyyy h:mm:ss a');
-    final parsed = format.parse(cleaned);
+    // TRY WITHOUT SECONDS FIRST
+    try {
+      final formatWithoutSeconds = DateFormat('MMM d, yyyy h:mm a');
+      parsed = formatWithoutSeconds.parse(cleaned);
+    } catch (_) {
+      // If that fails, try WITH seconds
+      final formatWithSeconds = DateFormat('MMM d, yyyy h:mm:ss a');
+      parsed = formatWithSeconds.parse(cleaned);
+    } 
     
     // Map abbreviations to IANA timezone names
     final tzMap = {
