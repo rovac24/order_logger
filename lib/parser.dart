@@ -76,6 +76,22 @@ const Map<String, String> stateNameToCode = {
   'WYOMING': 'WY',
 };
 
+bool _isStreetAddress(String line) {
+  final upper = line.toUpperCase();
+  
+  // Common street indicators
+  final streetIndicators = [
+    'ST ', ' AVE', ' AV ', 'ROAD', ' RD ', 
+    'BOULEVARD', ' BLVD', 'LANE', ' LN ',
+    'DRIVE', ' DR ', 'WAY', 'COURT', ' CT ',
+    'PLACE', ' PL ', 'HIGHWAY', ' HWY',
+    'SUITE', 'STE ', 'FLOOR', ' FL '
+  ];
+  
+  return streetIndicators.any((s) => upper.contains(s)) ||
+         RegExp(r'^\d+').hasMatch(line); // Starts with number
+}
+
 ParsedInvoice parseInvoice(String text) {
   final lines = text
       .split('\n')
@@ -185,27 +201,36 @@ ParsedInvoice parseInvoice(String text) {
     if ((line == 'CONTACT') || (line == 'Billing Address') ||
     (line == 'SHIPPING')){
       inAddressSection = true;
-      continue;
+      //continue;
     }
     // End of address section (next major section)
     if (inAddressSection && 
         (line == 'PAY TO THE ORDER OF' || 
         line == 'PAYMENT TERMS' || 
+        line == 'Customer' || 
         line == 'Total Due')) {
       inAddressSection = false;
     }
     if (state.isEmpty && inAddressSection) {
+      if (_isStreetAddress(line)) {
+        continue;
+      }
       final upper = line.toUpperCase();
 
-      // Case 1: City, NV 89014
-      final shortMatch = stateRegex.firstMatch(upper);
-      if (shortMatch != null) {
-        state = shortMatch.group(1) ?? '';
-      } 
+      //Case 1: City, NV 89014
+      final zipMatch = stateRegex.firstMatch(upper);
+      if (zipMatch != null) {
+        state = zipMatch.group(1) ?? '';
+      }
+      
+      var stateMatch = RegExp(r',\s([A-Z]{2})(?:\s|$)').firstMatch(upper);
+      if (stateMatch != null) {
+        state = stateMatch.group(1) ?? '';
+      }
 
       // Case 2: City, ST [anything else] pattern
       // This catches "Natick, MA Natick"
-      final stateMatch = RegExp(r',\s([A-Z]{2})\s').firstMatch(upper);
+      stateMatch = RegExp(r',\s([A-Z]{2})\s').firstMatch(upper);
       if (stateMatch != null) {
         state = stateMatch.group(1) ?? '';
         // if (state != null && stateNameToCode.values.contains(state)) {
