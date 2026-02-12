@@ -90,6 +90,7 @@ ParsedInvoice parseInvoice(String text) {
   var orderPlacedDate = '';
   double totalDue = 0;
   var payTo = '';
+  var inAddressSection = false;
 
   final stateRegex = RegExp(r',\s([A-Z]{2})\s\d{5}');
 
@@ -181,7 +182,19 @@ ParsedInvoice parseInvoice(String text) {
     // ----------------------------
     // State (from address line)
     // ----------------------------
-    if (state.isEmpty) {
+    if ((line == 'CONTACT') || (line == 'Billing Address') ||
+    (line == 'SHIPPING')){
+      inAddressSection = true;
+      continue;
+    }
+    // End of address section (next major section)
+    if (inAddressSection && 
+        (line == 'PAY TO THE ORDER OF' || 
+        line == 'PAYMENT TERMS' || 
+        line == 'Total Due')) {
+      inAddressSection = false;
+    }
+    if (state.isEmpty && inAddressSection) {
       final upper = line.toUpperCase();
 
       // Case 1: City, NV 89014
@@ -190,7 +203,17 @@ ParsedInvoice parseInvoice(String text) {
         state = shortMatch.group(1) ?? '';
       } 
 
-      // Case 2: City, Nevada 89014
+      // Case 2: City, ST [anything else] pattern
+      // This catches "Natick, MA Natick"
+      final stateMatch = RegExp(r',\s([A-Z]{2})\s').firstMatch(upper);
+      if (stateMatch != null) {
+        state = stateMatch.group(1) ?? '';
+        // if (state != null && stateNameToCode.values.contains(state)) {
+        //   return state;
+        // }
+      }
+
+      // Case 3: City, Nevada 89014
       for (final entry in stateNameToCode.entries) {
         if (upper.contains('${entry.key} ') || 
         upper.contains(', ${entry.key}')) 
