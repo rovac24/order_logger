@@ -325,7 +325,7 @@ class _OrderLoggerPageState extends State<OrderLoggerPage> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const Text('                Sending this:', 
+                              const Text('                  Sending this:', 
                               style: TextStyle(fontSize: 18, 
                               fontWeight: FontWeight.w600)),
                               const SizedBox(height: 10),

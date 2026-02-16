@@ -77,6 +77,11 @@ const Map<String, String> stateNameToCode = {
 };
 
 bool _isStreetAddress(String line) {
+  // If it has a ZIP code, it's an address line we want to parse
+  if (RegExp(r'\d{5}').hasMatch(line)) {
+    return false; // DON'T skip lines with ZIP codes
+  }
+  
   final upper = line.toUpperCase();
   
   // Common street indicators
