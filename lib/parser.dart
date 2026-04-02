@@ -112,6 +112,7 @@ ParsedInvoice parseInvoice(String text) {
   double totalDue = 0;
   var payTo = '';
   var inAddressSection = false;
+  var pacS = false;
 
   final stateRegex = RegExp(r',\s([A-Z]{2})\s\d{5}');
 
@@ -122,6 +123,28 @@ ParsedInvoice parseInvoice(String text) {
     // Invoice number (#123, 123, SO-123 or #INV-123)
     // ----------------------------
     if (invoiceNumber.isEmpty) {
+
+      //Pacific Stone
+      if (line.startsWith('INVOICE # ') && line.endsWith('-A')) {
+
+        pacS = true;
+        
+        // Automatically set client to PacStone
+        if (payTo.isEmpty) {
+          payTo = 'Pacific Stone';
+        }
+        // Automatically set State to CA
+        if (state.isEmpty) {
+          state = 'CA';
+        }
+        // Order placed date - use current date and time
+        // ----------------------------
+        if (orderPlacedDate.isEmpty) {
+          // Use current date and time
+          final now = DateTime.now();
+          orderPlacedDate = formatUtcPretty(now.toUtc());
+        }
+      } 
       // Check for SO- prefix first
       if (line.toUpperCase().startsWith('SO-')) {
         invoiceNumber = line.replaceAll(RegExp(r'[^0-9]'), '');
@@ -161,14 +184,43 @@ ParsedInvoice parseInvoice(String text) {
     if (line == 'Customer' && i + 1 < lines.length) {
       customerName = lines[i + 1];
     }
-
+    // ----------------------------
+    // Customer name - from line after "RECIPIENT:"
+    // Extract between "D.B.A." and "["
+    // ----------------------------
+    if (customerName.isEmpty && line.contains('RECIPIENT:')) {
+      // Look at next few lines (up to 2 lines) to find the D.B.A. pattern
+      // Start from next line and combine until we find the pattern
+      var combinedText = '';
+      for (var offset = 1; offset <= 2; offset++) {
+        if (i + offset < lines.length) {
+          combinedText += ' ${lines[i + offset]}';
+          
+          final dbaMatch = RegExp(r'D\.B\.A\.\s*(.*?)\s*\[').firstMatch(combinedText);
+          if (dbaMatch != null) {
+            customerName = dbaMatch.group(1)!.trim();
+            break;
+          }
+        }
+      }
+    }
     // ----------------------------
     // License number
     // ----------------------------
     if (line.startsWith('License #') && i + 1 < lines.length) {
       licenseNumber = lines[i + 1];
     }
-
+    // ----------------------------
+        // License number - after first "License" word, before first "Address" word
+        // ----------------------------
+        if (licenseNumber.isEmpty && line.startsWith('License')) {
+          // isLicenseSection = true;
+          // Look for license number in this line
+          final licenseMatch = RegExp(r'License\s+(\S+)').firstMatch(line);
+          if (licenseMatch != null) {
+            licenseNumber = licenseMatch.group(1)!;
+          }
+        }
     // ----------------------------
     // Order placed date
     // ----------------------------
@@ -194,7 +246,14 @@ ParsedInvoice parseInvoice(String text) {
     // ----------------------------
     // Total due
     // ----------------------------
-    if ((line == 'Total Due' || line == 'Total') && i + 1 < lines.length) {
+    if (pacS = true) {
+      final dollarMatch = RegExp(r'\$([\d,]+(?:\.\d{2})?)').firstMatch(line);
+      if (dollarMatch != null) {
+        final amountStr = dollarMatch.group(1)!.replaceAll(',', '');
+        totalDue = double.tryParse(amountStr) ?? 0;
+  }
+    }
+    else if ((line == 'Total Due' || line == 'Total') && i + 1 < lines.length) {
       totalDue = double.tryParse(
         lines[i + 1].replaceAll(RegExp(r'[^0-9.]'), ''),
       ) ?? 0;
