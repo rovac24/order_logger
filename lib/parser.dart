@@ -112,9 +112,12 @@ ParsedInvoice parseInvoice(String text) {
   double totalDue = 0;
   var payTo = '';
   var inAddressSection = false;
+  // ignore: unused_local_variable
   var pacS = false;
 
   final stateRegex = RegExp(r',\s([A-Z]{2})\s\d{5}');
+    // First, check if it's Pacafi Cooperative format
+  final isPacafi = text.contains('Pacafi Cooperative');
 
   for (var i = 0; i < lines.length; i++) {
     final line = lines[i];
@@ -183,6 +186,14 @@ ParsedInvoice parseInvoice(String text) {
     // ----------------------------
     if (line == 'Customer' && i + 1 < lines.length) {
       customerName = lines[i + 1];
+    }
+    // Getting Customer's name from PO / SO line for PacStone
+    if (customerName.isEmpty && isPacafi) {
+      // Look for "PO / SO" line
+      if (line.contains('PO / SO')) {
+        // Remove "PO / SO" and take the rest
+        customerName = line.replaceAll('PO / SO', '').trim();
+      }
     }
     // ----------------------------
     // Customer name - from line after "RECIPIENT:"
