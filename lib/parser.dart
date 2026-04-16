@@ -127,6 +127,25 @@ ParsedInvoice parseInvoice(String text) {
     // ----------------------------
     if (invoiceNumber.isEmpty) {
 
+      //Flower Moves NV
+      if (line.startsWith('ORD-NV')) {
+        //Take all first line as order number
+        final invoiceNumberMatch = RegExp(r'-([A-Z]\d+)$').firstMatch(line);
+        if (invoiceNumberMatch != null) {
+          invoiceNumber = invoiceNumberMatch.group(1)!;
+        }
+        // Automatically set client to GTI
+        if (payTo.isEmpty) {
+          payTo = 'GTI';
+        }
+        // Automatically set State to NV
+        if (state.isEmpty) {
+          state = 'NV';
+        }
+        //Set Datetime to current
+        orderPlacedDate = formatUtcPretty(DateTime.now().toUtc());
+      }
+
       //Pacific Stone
       if (line.startsWith('INVOICE # ') && line.endsWith('-A')) {
 
@@ -200,14 +219,14 @@ ParsedInvoice parseInvoice(String text) {
     // Extract between "D.B.A." and "["
     // ----------------------------
     if (customerName.isEmpty && line.contains('RECIPIENT:')) {
-      // Look at next few lines (up to 2 lines) to find the D.B.A. pattern
-      // Start from next line and combine until we find the pattern
-      var combinedText = '';
-      for (var offset = 1; offset <= 2; offset++) {
+      // Collect next lines to handle multi-line D.B.A.
+      var combined = '';
+      for (var offset = 1; offset <= 10; offset++) {
         if (i + offset < lines.length) {
-          combinedText += ' ${lines[i + offset]}';
+          combined += ' ${lines[i + offset]}';
           
-          final dbaMatch = RegExp(r'D\.B\.A\.\s*(.*?)\s*\[').firstMatch(combinedText);
+          // Check for D.B.A. pattern in combined text
+          final dbaMatch = RegExp(r'.A\.\s*(.*?)\s*\[').firstMatch(combined);
           if (dbaMatch != null) {
             customerName = dbaMatch.group(1)!.trim();
             break;
@@ -232,6 +251,15 @@ ParsedInvoice parseInvoice(String text) {
             licenseNumber = licenseMatch.group(1)!;
           }
         }
+
+    //Take License number for FM NV
+    if (licenseNumber.isEmpty && line.startsWith('License: ')) {
+      // Look for license number in this line
+      final licenseMatch = RegExp(r'License:\s+(\S+)').firstMatch(line);
+      if (licenseMatch != null) {
+        licenseNumber = licenseMatch.group(1)!;
+      }
+    }
     // ----------------------------
     // Order placed date
     // ----------------------------
@@ -240,6 +268,7 @@ ParsedInvoice parseInvoice(String text) {
       if (line == 'Order Placed Date' && i + 1 < lines.length) {
         orderPlacedDate = _parseInvoiceDateUtc(lines[i + 1]);
       }
+
       // Check for "Created At" 
       else if (line == 'Created At' && i + 1 < lines.length) {
         // Get the date from the next line
