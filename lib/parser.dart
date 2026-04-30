@@ -292,7 +292,8 @@ ParsedInvoice parseInvoice(String text) {
         totalDue = double.tryParse(amountStr) ?? 0;
   }
     }
-    else if ((line == 'Total Due' || line == 'Total') && i + 1 < lines.length) {
+    else if ((line == 'Total Due' || line == 'Total' || line == 'Total Price') 
+    && i + 1 < lines.length) {
       totalDue = double.tryParse(
         lines[i + 1].replaceAll(RegExp(r'[^0-9.]'), ''),
       ) ?? 0;
