@@ -112,11 +112,13 @@ class _OrderLoggerPageState extends State<OrderLoggerPage> {
   void parseNow(String text) {
     setState(() {
       parsed = text.trim().isEmpty ? null : parseInvoice(text);
+      if (parsed == null) {
+        status = '';
+        return;
+      }
       final missing = missingFields(parsed!);
       if (missing.isNotEmpty) {
-        setState(() {
-          status = '❌ Missing: ${missing.join(", ")}';
-        });
+        status = '❌ Missing: ${missing.join(", ")}';
       } else {
         status = '✅ All good here ✅';
       }
@@ -171,10 +173,6 @@ class _OrderLoggerPageState extends State<OrderLoggerPage> {
       setState(() => status = '❌ No invoice data to upload');
       return;
     }
-    // Always parse current text before upload
-    if (parsed == null && controller.text.trim().isNotEmpty) {
-      parsed = parseInvoice(controller.text);
-    }
     final missing = missingFields(parsed!);
     if (missing.isNotEmpty) {
       setState(() {
@@ -189,7 +187,7 @@ class _OrderLoggerPageState extends State<OrderLoggerPage> {
     });
     try {
       debugPrint('📤 Sending upload payload...');
-      await uploadToSheets(parsed!, selectedUploader);
+      await uploadToSheets(parsed!, selectedUploader!);
       setState(() {
         // ✅ reset everything
         parsed = null;

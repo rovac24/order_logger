@@ -1,5 +1,4 @@
 import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:timezone/timezone.dart' as tz;
 
@@ -286,7 +285,7 @@ ParsedInvoice parseInvoice(String text) {
     // ----------------------------
     // Total due
     // ----------------------------
-    if (pacS = true) {
+    if (pacS) {
       final dollarMatch = RegExp(r'\$([\d,]+(?:\.\d{2})?)').firstMatch(line);
       if (dollarMatch != null) {
         final amountStr = dollarMatch.group(1)!.replaceAll(',', '');
