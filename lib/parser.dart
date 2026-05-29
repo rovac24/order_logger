@@ -145,6 +145,25 @@ ParsedInvoice parseInvoice(String text) {
         orderPlacedDate = formatUtcPretty(DateTime.now().toUtc());
       }
 
+      //Flower Moves Rhode Island
+      if (line.startsWith('ORD-RI')) {
+        //Take all first line as order number
+        final invoiceNumberMatch = RegExp(r'-([A-Z]\d+)$').firstMatch(line);
+        if (invoiceNumberMatch != null) {
+          invoiceNumber = invoiceNumberMatch.group(1)!;
+        }
+        // Automatically set client to GTI
+        if (payTo.isEmpty) {
+          payTo = 'GTI';
+        }
+        // Automatically set State to NV
+        if (state.isEmpty) {
+          state = 'RI';
+        }
+        //Set Datetime to current
+        orderPlacedDate = formatUtcPretty(DateTime.now().toUtc());
+      }
+
       //Pacific Stone
       if (line.startsWith('INVOICE # ') && line.endsWith('-A')) {
 
