@@ -382,7 +382,9 @@ ParsedInvoice parseInvoice(String text) {
           next.contains('GREEN THUMB') || 
           next.contains('FIORELLO PHARMACEUTICALS')) {
         payTo = 'GTI';
-      } else if (next.contains('ASCEND')) {
+      } else if (next.contains('ASCEND') ||
+                next.contains('STORY OF PA CR LLC') ||
+                next.contains('MASSGROW, LLC')) {
         payTo = 'Ascend';
       }
     }
