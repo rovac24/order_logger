@@ -61,6 +61,7 @@ class _OrderLoggerPageState extends State<OrderLoggerPage> {
   'Arturo Juarez',
   'David Salazar',
   'Dusan Markovic',
+  'Erika Zuniga',
   'Ernesto Salazar Alejos',
   'Juan Bayer',
   'Laura Martinez',
