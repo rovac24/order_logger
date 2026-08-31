@@ -182,9 +182,25 @@ class _OrderLoggerPageState extends State<OrderLoggerPage> {
     }
     setState(() {
       isUploading = true;
-      status = '⏳ Upload started...';
+      status = '⏳ Upload started...'; //status = '⏳ Checking for duplicates...';
       error = null;
     });
+
+    // final isDuplicate = await checkDuplicateInvoice(parsed!);
+    // if (isDuplicate) {
+    //   final proceed = await _confirmDuplicateUpload();
+    //   if (proceed != true) {
+    //     setState(() {
+    //       isUploading = false;
+    //       status = '⚠ Upload cancelled — duplicate';
+    //     });
+    //     return;
+    //   }
+    // }
+
+    // setState(() {
+    //   status = '⏳ Upload started...';
+    // });
     try {
       debugPrint('📤 Sending upload payload...');
       await uploadToSheets(parsed!, selectedUploader!);
@@ -209,6 +225,29 @@ class _OrderLoggerPageState extends State<OrderLoggerPage> {
         });
       }
   }
+
+  // Future<bool?> _confirmDuplicateUpload() {
+  //   return showDialog<bool>(
+  //     context: context,
+  //     builder: (context) => AlertDialog(
+  //       title: const Text('⚠️ Possible duplicate'),
+  //       content: Text(
+  //         'Invoice #${parsed!.invoiceNumber} for ${parsed!.customerName} '
+  //         'already appears to be on the sheet. Submit anyway?',
+  //       ),
+  //       actions: [
+  //         TextButton(
+  //           onPressed: () => Navigator.of(context).pop(false),
+  //           child: const Text('Cancel'),
+  //         ),
+  //         FilledButton(
+  //           onPressed: () => Navigator.of(context).pop(true),
+  //           child: const Text('Submit anyway'),
+  //         ),
+  //       ],
+  //     ),
+  //   );
+  // }
 
   @override
   Widget build(BuildContext context) {
