@@ -1,0 +1,106 @@
+function doGet(e) {
+  const sheet = SpreadsheetApp
+    .openById('1eBX-OiTGma5nCnmx3kK3GQziUPpe269Lr9oVjIiVgWU')
+    .getSheetByName('Form Responses');
+
+  if (e.parameter.action === 'checkDuplicate') {
+    const result = findDuplicate(
+      sheet,
+      e.parameter.invoice || '',
+      e.parameter.customer || ''
+    );
+
+    return ContentService
+      .createTextOutput(JSON.stringify(result))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+
+  if (e.parameter.action === 'updateAmount') {
+    const updated = updateAmount(
+      sheet,
+      e.parameter.invoice || '',
+      e.parameter.customer || '',
+      Number(e.parameter.total || 0)
+    );
+
+    return ContentService
+      .createTextOutput(JSON.stringify({ updated: updated }))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+
+  sheet.appendRow([
+    e.parameter.invoice || '',
+    e.parameter.state || '',
+    e.parameter.customer || '',
+    e.parameter.edits || '',
+    e.parameter.submittedBy || '',
+    e.parameter.dateUtc || '',
+    Number(e.parameter.total || 0),
+    e.parameter.payTo || '',
+    e.parameter.license || '',
+  ]);
+
+  return ContentService
+    .createTextOutput('OK')
+    .setMimeType(ContentService.MimeType.TEXT);
+}
+
+// Only scans the most recent MAX_DUPLICATE_CHECK_ROWS rows instead of the
+// whole sheet, since legitimate duplicate resubmissions only happen shortly
+// after the original entry.
+const MAX_DUPLICATE_CHECK_ROWS = 7000;
+
+// Column A = invoice, column C = customer. Compares case/whitespace-
+// insensitively. Searches backward so ties resolve to the most recent row.
+// Shared by findDuplicate and updateAmount.
+function findMatchingRow(sheet, invoice, customer) {
+  const normalizedInvoice = invoice.trim().toLowerCase();
+  const normalizedCustomer = customer.trim().toLowerCase();
+
+  if (!normalizedInvoice || !normalizedCustomer) {
+    return null;
+  }
+
+  const lastRow = sheet.getLastRow();
+  if (lastRow < 1) {
+    return null;
+  }
+
+  const startRow = Math.max(1, lastRow - MAX_DUPLICATE_CHECK_ROWS + 1);
+  const numRows = lastRow - startRow + 1;
+  const values = sheet.getRange(startRow, 1, numRows, 3).getValues(); // columns A-C
+
+  for (let i = values.length - 1; i >= 0; i--) {
+    const rowInvoice = String(values[i][0]).trim().toLowerCase();
+    const rowCustomer = String(values[i][2]).trim().toLowerCase();
+    if (rowInvoice === normalizedInvoice && rowCustomer === normalizedCustomer) {
+      return startRow + i;
+    }
+  }
+
+  return null;
+}
+
+// Returns { duplicate: false } or { duplicate: true, existingTotal } where
+// existingTotal is the Dollar Amount (column G) currently on the matched row.
+function findDuplicate(sheet, invoice, customer) {
+  const row = findMatchingRow(sheet, invoice, customer);
+  if (row === null) {
+    return { duplicate: false };
+  }
+
+  const existingTotal = Number(sheet.getRange(row, 7).getValue()) || 0;
+  return { duplicate: true, existingTotal: existingTotal };
+}
+
+// Overwrites the Dollar Amount (column G) on the most recent matching row.
+// Returns true if a row was updated, false if no match was found.
+function updateAmount(sheet, invoice, customer, total) {
+  const row = findMatchingRow(sheet, invoice, customer);
+  if (row === null) {
+    return false;
+  }
+
+  sheet.getRange(row, 7).setValue(total);
+  return true;
+}

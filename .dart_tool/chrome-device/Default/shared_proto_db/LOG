@@ -1,8 +1,20 @@
-2026/08/31-15:50:57.240 222c Reusing MANIFEST C:\Users\headq\AppData\Local\Temp\flutter_tools.cccbddc0\flutter_tools_chrome_device.c7d47a21\Default\shared_proto_db/MANIFEST-000001
-2026/08/31-15:50:57.242 222c Recovering log #16
-2026/08/31-15:50:57.244 222c Reusing old log C:\Users\headq\AppData\Local\Temp\flutter_tools.cccbddc0\flutter_tools_chrome_device.c7d47a21\Default\shared_proto_db/000016.log 
-2026/08/31-15:50:57.247 222c Delete type=0 #3
-2026/08/31-15:50:57.247 222c Delete type=0 #4
-2026/08/31-15:50:57.247 222c Delete type=0 #7
-2026/08/31-15:50:57.249 222c Delete type=0 #10
-2026/08/31-15:50:57.249 222c Delete type=0 #13
+2026/09/11-12:12:17.372 5634 Reusing MANIFEST C:\Users\headq\AppData\Local\Temp\flutter_tools.72732e97\flutter_tools_chrome_device.f4d39257\Default\shared_proto_db/MANIFEST-000001
+2026/09/11-12:12:17.377 5634 Recovering log #16
+2026/09/11-12:12:17.402 5634 Reusing old log C:\Users\headq\AppData\Local\Temp\flutter_tools.72732e97\flutter_tools_chrome_device.f4d39257\Default\shared_proto_db/000016.log 
+2026/09/11-12:12:17.404 5634 Delete type=0 #3
+2026/09/11-12:12:17.405 5634 Delete type=0 #4
+2026/09/11-12:12:17.405 5634 Delete type=0 #7
+2026/09/11-12:12:17.405 5634 Delete type=0 #10
+2026/09/11-12:12:17.405 5634 Delete type=0 #13
+2026/09/11-12:13:10.572 5754 Level-0 table #20: started
+2026/09/11-12:13:10.590 5754 Level-0 table #20: 135829 bytes OK
+2026/09/11-12:13:10.595 5754 Delete type=0 #16
+2026/09/11-12:13:10.597 5754 Compacting 4@0 + 1@1 files
+2026/09/11-12:13:10.634 5754 Generated table #21@0: 1076 keys, 45527 bytes
+2026/09/11-12:13:10.634 5754 Compacted 4@0 + 1@1 files => 45527 bytes
+2026/09/11-12:13:10.636 5754 compacted to: files[ 0 1 1 0 0 0 0 ]
+2026/09/11-12:13:10.638 5754 Delete type=2 #8
+2026/09/11-12:13:10.638 5754 Delete type=2 #11
+2026/09/11-12:13:10.638 5754 Delete type=2 #14
+2026/09/11-12:13:10.639 5754 Delete type=2 #17
+2026/09/11-12:13:10.639 5754 Delete type=2 #20

@@ -186,21 +186,60 @@ class _OrderLoggerPageState extends State<OrderLoggerPage> {
       error = null;
     });
 
-    // final isDuplicate = await checkDuplicateInvoice(parsed!);
-    // if (isDuplicate) {
-    //   final proceed = await _confirmDuplicateUpload();
-    //   if (proceed != true) {
-    //     setState(() {
-    //       isUploading = false;
-    //       status = '⚠ Upload cancelled — duplicate';
-    //     });
-    //     return;
-    //   }
-    // }
+    final duplicateCheck = await checkDuplicateInvoice(parsed!);
+    if (duplicateCheck.isDuplicate) {
+      final existingTotal = duplicateCheck.existingTotal;
+      final amountUnchanged = existingTotal != null &&
+          (existingTotal - parsed!.totalDue).abs() < 0.005;
+      if (amountUnchanged) {
+        setState(() {
+          isUploading = false;
+          status = '⚠ Already logged with the same total — No changes made';
+        });
+        return;
+      }
 
-    // setState(() {
-    //   status = '⏳ Upload started...';
-    // });
+      final shouldUpdate = await _confirmDuplicateUpload(existingTotal);
+      if (shouldUpdate != true) {
+        setState(() {
+          isUploading = false;
+          status = '⚠ Upload cancelled — duplicate';
+        });
+        return;
+      }
+
+      setState(() {
+        status = '⏳ Updating existing entry...';
+      });
+      try {
+        debugPrint('📤 Updating existing row amount...');
+        await updateInvoiceAmount(parsed!);
+        setState(() {
+          // ✅ reset everything
+          parsed = null;
+          controller.clear();
+          status = '✅ Existing entry updated';
+          isUploading = false;
+        });
+        // optional: auto-clear success message after 2 seconds
+        Future.delayed(const Duration(seconds: 2), () {
+          if (mounted) {
+            setState(() => status = '');
+          }
+        });
+      } catch (e) {
+        setState(() {
+          error = 'Update failed';
+          status = '';
+          isUploading = false;
+        });
+      }
+      return;
+    }
+
+    setState(() {
+      status = '⏳ Upload started...';
+    });
     try {
       debugPrint('📤 Sending upload payload...');
       await uploadToSheets(parsed!, selectedUploader!);
@@ -226,28 +265,37 @@ class _OrderLoggerPageState extends State<OrderLoggerPage> {
       }
   }
 
-  // Future<bool?> _confirmDuplicateUpload() {
-  //   return showDialog<bool>(
-  //     context: context,
-  //     builder: (context) => AlertDialog(
-  //       title: const Text('⚠️ Possible duplicate'),
-  //       content: Text(
-  //         'Invoice #${parsed!.invoiceNumber} for ${parsed!.customerName} '
-  //         'already appears to be on the sheet. Submit anyway?',
-  //       ),
-  //       actions: [
-  //         TextButton(
-  //           onPressed: () => Navigator.of(context).pop(false),
-  //           child: const Text('Cancel'),
-  //         ),
-  //         FilledButton(
-  //           onPressed: () => Navigator.of(context).pop(true),
-  //           child: const Text('Submit anyway'),
-  //         ),
-  //       ],
-  //     ),
-  //   );
-  // }
+  Future<bool?> _confirmDuplicateUpload(double? existingTotal) {
+    final existingTotalText = existingTotal != null
+        ? '\$${existingTotal.toStringAsFixed(2)}'
+        : 'an unknown amount';
+    return showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('⚠️ Duplicate alert!'),
+        content: Text(
+          'Invoice #${parsed!.invoiceNumber} for ${parsed!.customerName} '
+          'already appears to be on the sheet with a total of '
+          '$existingTotalText \nDo you want to update it to '
+          '\$${parsed!.totalDue.toStringAsFixed(2)}?',
+          style: TextStyle(
+            fontSize:
+                (Theme.of(context).textTheme.bodyMedium?.fontSize ?? 14) * 1.5,
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Update existing row'),
+          ),
+        ],
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
