@@ -1,9 +1,17 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:order_logger_web/sheets.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:timezone/data/latest.dart' as tz;
+import 'package:web/web.dart' as web;
 import 'parser.dart';
+import 'version_check.dart';
+
+const Duration _versionCheckInterval = Duration(minutes: 5);
+
+// Keep in sync with the `version:` field in pubspec.yaml.
+const String appVersion = '1.0.0+1';
 
 void main() {
   tz.initializeTimeZones();
@@ -56,6 +64,10 @@ class _OrderLoggerPageState extends State<OrderLoggerPage> {
   bool isUploading = false;
   String? selectedUploader;
 
+  String? _loadedCommit;
+  bool _updateAvailable = false;
+  Timer? _versionCheckTimer;
+
   final List<String> sopsteam = [
   'Angel Daniel Di Alonzo Torres',
   'Arturo Juarez',
@@ -80,6 +92,7 @@ class _OrderLoggerPageState extends State<OrderLoggerPage> {
   void initState() {
     super.initState();
     _loadUploaderName();
+    _initVersionCheck();
 
     uploaderController.addListener(() async {
       final prefs = await SharedPreferences.getInstance();
@@ -90,8 +103,48 @@ class _OrderLoggerPageState extends State<OrderLoggerPage> {
     });
   }
 
+  Future<void> _initVersionCheck() async {
+    final commit = await fetchDeployedCommit();
+    if (!mounted) return;
+    setState(() => _loadedCommit = commit);
+    if (commit == null) {
+      // No build_info.json (e.g. local dev run) — nothing to compare against.
+      return;
+    }
+    _versionCheckTimer = Timer.periodic(
+      _versionCheckInterval,
+      (_) => _checkForNewVersion(),
+    );
+  }
+
+  Future<void> _checkForNewVersion() async {
+    if (_updateAvailable) return;
+    final latestCommit = await fetchDeployedCommit();
+    if (latestCommit == null || latestCommit == _loadedCommit) {
+      return;
+    }
+    _versionCheckTimer?.cancel();
+    if (!mounted) return;
+    setState(() => _updateAvailable = true);
+    ScaffoldMessenger.of(context).showMaterialBanner(
+      MaterialBanner(
+        content: const Text(
+          'A new version of Order Logger is available.',
+        ),
+        leading: const Icon(Icons.system_update),
+        actions: [
+          TextButton(
+            onPressed: () => web.window.location.reload(),
+            child: const Text('Refresh now'),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   void dispose() {
+    _versionCheckTimer?.cancel();
     uploaderController.dispose();
     controller.dispose();
     super.dispose();
@@ -312,7 +365,9 @@ class _OrderLoggerPageState extends State<OrderLoggerPage> {
         ],
       ),
       body: SafeArea(
-        child: Padding(
+        child: Stack(
+          children: [
+            Padding(
           padding: const EdgeInsets.all(16),
           child: Column(children: [
                 const Text(
@@ -430,6 +485,18 @@ class _OrderLoggerPageState extends State<OrderLoggerPage> {
                     ),
                   ),
               ]),
+        ),
+            Positioned(
+              left: 8,
+              bottom: 4,
+              child: Text(
+                _loadedCommit != null
+                    ? 'v$appVersion · ${_loadedCommit!.substring(0, 7)}'
+                    : 'v$appVersion',
+                style: const TextStyle(fontSize: 11, color: Colors.grey),
+              ),
+            ),
+          ],
         ),
       ),
     );

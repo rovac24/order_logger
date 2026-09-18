@@ -12,7 +12,8 @@
         "http",
         "intl",
         "shared_preferences",
-        "timezone"
+        "timezone",
+        "web"
       ],
       "devDependencies": [
         "flutter_lints",
@@ -43,6 +44,11 @@
       "dependencies": [
         "lints"
       ]
+    },
+    {
+      "name": "web",
+      "version": "1.1.1",
+      "dependencies": []
     },
     {
       "name": "timezone",
@@ -246,11 +252,6 @@
         "flutter",
         "shared_preferences_platform_interface"
       ]
-    },
-    {
-      "name": "web",
-      "version": "1.1.1",
-      "dependencies": []
     },
     {
       "name": "http_parser",
