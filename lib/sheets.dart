@@ -3,20 +3,25 @@ import 'package:http/http.dart' as http;
 import 'parser.dart';
 
 const String sheetUrl =
-    'https://script.google.com/macros/s/AKfycbwLJGl_-KfJUp7X9pBxsFjnImAJaVezLk_fJTtE-dq47lPnyVV0ORfuXEskMM08jVTm/exec';
+    'https://script.google.com/macros/s/AKfycbzW4AMJm-OBL7ES8sugMxKTtdewMHCwMzLoODrAQfcWxZn4k91vrm8R2EYTeTL8eoYAOQ/exec';
 
 /// Result of a duplicate check: whether a match was found, and — if so —
-/// the total currently on that row, so callers can tell whether an update
-/// would actually change anything.
+/// the customer name and total currently on that row, so callers can tell
+/// whether an update would actually change anything.
 class DuplicateCheckResult {
-  DuplicateCheckResult({required this.isDuplicate, this.existingTotal});
+  DuplicateCheckResult({
+    required this.isDuplicate,
+    this.existingCustomer,
+    this.existingTotal,
+  });
 
   final bool isDuplicate;
+  final String? existingCustomer;
   final double? existingTotal;
 }
 
-/// Asks the Apps Script backend whether an invoice with this number and
-/// customer name has already been logged on the sheet.
+/// Asks the Apps Script backend whether an invoice with this number has
+/// already been logged on the sheet.
 ///
 /// Returns a non-duplicate result (rather than throwing) if the check
 /// itself fails, so a backend hiccup never blocks a legitimate upload.
@@ -24,7 +29,6 @@ Future<DuplicateCheckResult> checkDuplicateInvoice(ParsedInvoice p) async {
   final uri = Uri.parse(sheetUrl).replace(queryParameters: {
     'action': 'checkDuplicate',
     'invoice': p.invoiceNumber,
-    'customer': p.customerName,
   });
 
   final res = await http.get(uri);
@@ -40,6 +44,7 @@ Future<DuplicateCheckResult> checkDuplicateInvoice(ParsedInvoice p) async {
     final existingTotal = body['existingTotal'];
     return DuplicateCheckResult(
       isDuplicate: true,
+      existingCustomer: body['existingCustomer'] as String?,
       existingTotal: existingTotal is num ? existingTotal.toDouble() : null,
     );
   } catch (_) {
@@ -47,13 +52,13 @@ Future<DuplicateCheckResult> checkDuplicateInvoice(ParsedInvoice p) async {
   }
 }
 
-/// Updates the Dollar Amount (total) on the most recent existing row that
-/// matches this invoice's number and customer name, instead of appending a
+/// Updates the customer name and Dollar Amount (total) on the most recent
+/// existing row that matches this invoice's number, instead of appending a
 /// new row. Used when the user confirms a duplicate should overwrite the
 /// existing entry rather than create another one.
-Future<void> updateInvoiceAmount(ParsedInvoice p) async {
+Future<void> updateInvoiceRow(ParsedInvoice p) async {
   final uri = Uri.parse(sheetUrl).replace(queryParameters: {
-    'action': 'updateAmount',
+    'action': 'updateInvoiceRow',
     'invoice': p.invoiceNumber,
     'customer': p.customerName,
     'total': p.totalDue.toString(),

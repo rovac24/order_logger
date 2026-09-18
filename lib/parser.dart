@@ -111,12 +111,9 @@ ParsedInvoice parseInvoice(String text) {
   double totalDue = 0;
   var payTo = '';
   var inAddressSection = false;
-  // ignore: unused_local_variable
-  var pacS = false;
+  var eaze = false;
 
   final stateRegex = RegExp(r',\s([A-Z]{2})\s\d{5}');
-    // First, check if it's Pacafi Cooperative format
-  final isPacafi = text.contains('Pacafi Cooperative');
 
   for (var i = 0; i < lines.length; i++) {
     final line = lines[i];
@@ -164,15 +161,13 @@ ParsedInvoice parseInvoice(String text) {
         orderPlacedDate = formatUtcPretty(DateTime.now().toUtc());
       }
 
-      //Pacific Stone
+      //Nabis -> Eaze + PacStone
       if (line.startsWith('INVOICE # ') && line.endsWith('-A')) {
-
-        pacS = true;
-        
-        // Automatically set client to PacStone
-        if (payTo.isEmpty) {
-          payTo = 'Pacific Stone';
-        }
+        eaze = true;
+        // Automatically set client to eaze
+          if (payTo.isEmpty) {
+            payTo = 'Eaze';
+          }
         // Automatically set State to CA
         if (state.isEmpty) {
           state = 'CA';
@@ -184,7 +179,8 @@ ParsedInvoice parseInvoice(String text) {
           final now = DateTime.now();
           orderPlacedDate = formatUtcPretty(now.toUtc());
         }
-      } 
+      }   
+      
       // Check for SO- prefix first
       if (line.toUpperCase().startsWith('SO-')) {
         invoiceNumber = line.replaceAll(RegExp(r'[^0-9]'), '');
@@ -224,31 +220,35 @@ ParsedInvoice parseInvoice(String text) {
     if (line == 'Customer' && i + 1 < lines.length) {
       customerName = lines[i + 1];
     }
-    // Getting Customer's name from PO / SO line for PacStone
-    if (customerName.isEmpty && isPacafi) {
-      // Look for "PO / SO" line
-      if (line.contains('PO / SO')) {
-        // Remove "PO / SO" and take the rest
-        customerName = line.replaceAll('PO / SO', '').trim();
-      }
-    }
     // ----------------------------
     // Customer name - from line after "RECIPIENT:"
     // Extract between "D.B.A." and "["
     // ----------------------------
     if (customerName.isEmpty && line.contains('RECIPIENT:')) {
-      // Collect next lines to handle multi-line D.B.A.
-      var combined = '';
-      for (var offset = 1; offset <= 10; offset++) {
-        if (i + offset < lines.length) {
-          combined += ' ${lines[i + offset]}';
-          
-          // Check for D.B.A. pattern in combined text
-          final dbaMatch = RegExp(r'.A\.\s*(.*?)\s*\[').firstMatch(combined);
-          if (dbaMatch != null) {
-            customerName = dbaMatch.group(1)!.trim();
-            break;
+      // Seed with the RECIPIENT line itself — the D.B.A. text is often on
+      // that same line — then append subsequent lines to handle a
+      // multi-line D.B.A./bracket split.
+      var combined = line;
+      for (var offset = 0; offset <= 10; offset++) {
+        if (offset > 0) {
+          if (i + offset >= lines.length) break;
+          // A trailing hyphen means the PDF text wrapped mid-word (e.g.
+          // "As-" / "hbury"); stitch it back together instead of joining
+          // with a space, which would leave a stray hyphen in the name.
+          if (combined.endsWith('-')) {
+            combined =
+                combined.substring(0, combined.length - 1) +
+                    lines[i + offset];
+          } else {
+            combined += ' ${lines[i + offset]}';
           }
+        }
+
+        // Check for D.B.A. pattern in combined text
+        final dbaMatch = RegExp(r'.A\.\s*(.*?)\s*\[').firstMatch(combined);
+        if (dbaMatch != null) {
+          customerName = dbaMatch.group(1)!.trim();
+          break;
         }
       }
     }
@@ -259,7 +259,8 @@ ParsedInvoice parseInvoice(String text) {
       licenseNumber = lines[i + 1];
     }
     // ----------------------------
-        // License number - after first "License" word, before first "Address" word
+        // License number - after first "License" word, before first
+        // "Address" word
         // ----------------------------
         if (licenseNumber.isEmpty && line.startsWith('License')) {
           // isLicenseSection = true;
@@ -304,12 +305,12 @@ ParsedInvoice parseInvoice(String text) {
     // ----------------------------
     // Total due
     // ----------------------------
-    if (pacS) {
+    if (eaze) {
       final dollarMatch = RegExp(r'\$([\d,]+(?:\.\d{2})?)').firstMatch(line);
       if (dollarMatch != null) {
         final amountStr = dollarMatch.group(1)!.replaceAll(',', '');
         totalDue = double.tryParse(amountStr) ?? 0;
-  }
+        }
     }
     else if ((line == 'Total Due' || line == 'Total' || line == 'Total Price') 
     && i + 1 < lines.length) {

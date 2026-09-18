@@ -11,7 +11,7 @@ import 'version_check.dart';
 const Duration _versionCheckInterval = Duration(minutes: 5);
 
 // Keep in sync with the `version:` field in pubspec.yaml.
-const String appVersion = '1.0.0+1';
+const String appVersion = '1.24.0+1';
 
 void main() {
   tz.initializeTimeZones();
@@ -242,17 +242,24 @@ class _OrderLoggerPageState extends State<OrderLoggerPage> {
     final duplicateCheck = await checkDuplicateInvoice(parsed!);
     if (duplicateCheck.isDuplicate) {
       final existingTotal = duplicateCheck.existingTotal;
+      final existingCustomer = duplicateCheck.existingCustomer;
       final amountUnchanged = existingTotal != null &&
           (existingTotal - parsed!.totalDue).abs() < 0.005;
-      if (amountUnchanged) {
+      final customerUnchanged = existingCustomer != null &&
+          existingCustomer.trim().toLowerCase() ==
+              parsed!.customerName.trim().toLowerCase();
+      if (amountUnchanged && customerUnchanged) {
         setState(() {
           isUploading = false;
-          status = '⚠ Already logged with the same total — No changes made';
+          status = '⚠ Already logged with the same details — No changes made';
         });
         return;
       }
 
-      final shouldUpdate = await _confirmDuplicateUpload(existingTotal);
+      final shouldUpdate = await _confirmDuplicateUpload(
+        existingCustomer,
+        existingTotal,
+      );
       if (shouldUpdate != true) {
         setState(() {
           isUploading = false;
@@ -265,8 +272,8 @@ class _OrderLoggerPageState extends State<OrderLoggerPage> {
         status = '⏳ Updating existing entry...';
       });
       try {
-        debugPrint('📤 Updating existing row amount...');
-        await updateInvoiceAmount(parsed!);
+        debugPrint('📤 Updating existing row...');
+        await updateInvoiceRow(parsed!);
         setState(() {
           // ✅ reset everything
           parsed = null;
@@ -318,19 +325,38 @@ class _OrderLoggerPageState extends State<OrderLoggerPage> {
       }
   }
 
-  Future<bool?> _confirmDuplicateUpload(double? existingTotal) {
-    final existingTotalText = existingTotal != null
-        ? '\$${existingTotal.toStringAsFixed(2)}'
-        : 'an unknown amount';
+  Future<bool?> _confirmDuplicateUpload(
+    String? existingCustomer,
+    double? existingTotal,
+  ) {
+    final changes = <String>[];
+
+    final customerChanged = existingCustomer == null ||
+        existingCustomer.trim().toLowerCase() !=
+            parsed!.customerName.trim().toLowerCase();
+    if (customerChanged) {
+      final existingCustomerText = existingCustomer ?? 'an unknown customer';
+      changes.add('Customer: $existingCustomerText → ${parsed!.customerName}');
+    }
+
+    final amountChanged = existingTotal == null ||
+        (existingTotal - parsed!.totalDue).abs() >= 0.005;
+    if (amountChanged) {
+      final existingTotalText = existingTotal != null
+          ? '\$${existingTotal.toStringAsFixed(2)}'
+          : 'an unknown amount';
+      changes.add(
+        'Total: $existingTotalText → \$${parsed!.totalDue.toStringAsFixed(2)}',
+      );
+    }
+
     return showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('⚠️ Duplicate alert!'),
         content: Text(
-          'Invoice #${parsed!.invoiceNumber} for ${parsed!.customerName} '
-          'already appears to be on the sheet with a total of '
-          '$existingTotalText \nDo you want to update it to '
-          '\$${parsed!.totalDue.toStringAsFixed(2)}?',
+          'Invoice #${parsed!.invoiceNumber} already appears on the '
+          'sheet.\n${changes.join('\n')}\n\nUpdate the existing row?',
           style: TextStyle(
             fontSize:
                 (Theme.of(context).textTheme.bodyMedium?.fontSize ?? 14) * 1.5,

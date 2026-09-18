@@ -4,19 +4,15 @@ function doGet(e) {
     .getSheetByName('Form Responses');
 
   if (e.parameter.action === 'checkDuplicate') {
-    const result = findDuplicate(
-      sheet,
-      e.parameter.invoice || '',
-      e.parameter.customer || ''
-    );
+    const result = findDuplicate(sheet, e.parameter.invoice || '');
 
     return ContentService
       .createTextOutput(JSON.stringify(result))
       .setMimeType(ContentService.MimeType.JSON);
   }
 
-  if (e.parameter.action === 'updateAmount') {
-    const updated = updateAmount(
+  if (e.parameter.action === 'updateInvoiceRow') {
+    const updated = updateInvoiceRow(
       sheet,
       e.parameter.invoice || '',
       e.parameter.customer || '',
@@ -50,14 +46,13 @@ function doGet(e) {
 // after the original entry.
 const MAX_DUPLICATE_CHECK_ROWS = 7000;
 
-// Column A = invoice, column C = customer. Compares case/whitespace-
-// insensitively. Searches backward so ties resolve to the most recent row.
-// Shared by findDuplicate and updateAmount.
-function findMatchingRow(sheet, invoice, customer) {
+// Column A = invoice. Compares case/whitespace-insensitively. Searches
+// backward so ties resolve to the most recent row. Shared by findDuplicate
+// and updateInvoiceRow.
+function findMatchingRow(sheet, invoice) {
   const normalizedInvoice = invoice.trim().toLowerCase();
-  const normalizedCustomer = customer.trim().toLowerCase();
 
-  if (!normalizedInvoice || !normalizedCustomer) {
+  if (!normalizedInvoice) {
     return null;
   }
 
@@ -68,12 +63,11 @@ function findMatchingRow(sheet, invoice, customer) {
 
   const startRow = Math.max(1, lastRow - MAX_DUPLICATE_CHECK_ROWS + 1);
   const numRows = lastRow - startRow + 1;
-  const values = sheet.getRange(startRow, 1, numRows, 3).getValues(); // columns A-C
+  const values = sheet.getRange(startRow, 1, numRows, 1).getValues(); // column A
 
   for (let i = values.length - 1; i >= 0; i--) {
     const rowInvoice = String(values[i][0]).trim().toLowerCase();
-    const rowCustomer = String(values[i][2]).trim().toLowerCase();
-    if (rowInvoice === normalizedInvoice && rowCustomer === normalizedCustomer) {
+    if (rowInvoice === normalizedInvoice) {
       return startRow + i;
     }
   }
@@ -81,26 +75,33 @@ function findMatchingRow(sheet, invoice, customer) {
   return null;
 }
 
-// Returns { duplicate: false } or { duplicate: true, existingTotal } where
-// existingTotal is the Dollar Amount (column G) currently on the matched row.
-function findDuplicate(sheet, invoice, customer) {
-  const row = findMatchingRow(sheet, invoice, customer);
+// Returns { duplicate: false } or { duplicate: true, existingCustomer,
+// existingTotal } where existingCustomer/existingTotal are the customer
+// name (column C) and Dollar Amount (column G) currently on the matched row.
+function findDuplicate(sheet, invoice) {
+  const row = findMatchingRow(sheet, invoice);
   if (row === null) {
     return { duplicate: false };
   }
 
-  const existingTotal = Number(sheet.getRange(row, 7).getValue()) || 0;
-  return { duplicate: true, existingTotal: existingTotal };
+  const rowValues = sheet.getRange(row, 1, 1, 7).getValues()[0]; // columns A-G
+  return {
+    duplicate: true,
+    existingCustomer: String(rowValues[2] || ''),
+    existingTotal: Number(rowValues[6]) || 0,
+  };
 }
 
-// Overwrites the Dollar Amount (column G) on the most recent matching row.
-// Returns true if a row was updated, false if no match was found.
-function updateAmount(sheet, invoice, customer, total) {
-  const row = findMatchingRow(sheet, invoice, customer);
+// Overwrites the customer name (column C) and Dollar Amount (column G) on
+// the most recent matching row. Returns true if a row was updated, false if
+// no match was found.
+function updateInvoiceRow(sheet, invoice, customer, total) {
+  const row = findMatchingRow(sheet, invoice);
   if (row === null) {
     return false;
   }
 
+  sheet.getRange(row, 3).setValue(customer);
   sheet.getRange(row, 7).setValue(total);
   return true;
 }
