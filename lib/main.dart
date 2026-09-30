@@ -11,7 +11,7 @@ import 'version_check.dart';
 const Duration _versionCheckInterval = Duration(minutes: 5);
 
 // Keep in sync with the `version:` field in pubspec.yaml.
-const String appVersion = '1.24.1+1';
+const String appVersion = '1.24.2+1';
 
 void main() {
   tz.initializeTimeZones();
