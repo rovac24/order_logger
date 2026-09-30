@@ -8,7 +8,7 @@ import 'package:web/web.dart' as web;
 import 'parser.dart';
 import 'version_check.dart';
 
-const Duration _versionCheckInterval = Duration(minutes: 5);
+const Duration _versionCheckInterval = Duration(minutes: 2);
 
 // Keep in sync with the `version:` field in pubspec.yaml.
 const String appVersion = '1.24.2+1';
@@ -141,7 +141,10 @@ class _OrderLoggerPageState extends State<OrderLoggerPage> {
       builder: (context) => PopScope(
         canPop: false,
         child: AlertDialog(
-          title: const Text('⚠️ Update required'),
+          title: const Text(
+            '⚠️ Update required',
+            textAlign: TextAlign.center,
+          ),
           content: const Text(
             'A new version of Order Logger has been deployed. To avoid '
             'submitting data with an outdated version of the app, please '
