@@ -126,18 +126,35 @@ class _OrderLoggerPageState extends State<OrderLoggerPage> {
     _versionCheckTimer?.cancel();
     if (!mounted) return;
     setState(() => _updateAvailable = true);
-    ScaffoldMessenger.of(context).showMaterialBanner(
-      MaterialBanner(
-        content: const Text(
-          'A new version of Order Logger is available.',
-        ),
-        leading: const Icon(Icons.system_update),
-        actions: [
-          TextButton(
-            onPressed: () => web.window.location.reload(),
-            child: const Text('Refresh now'),
+    _showUpdateRequiredDialog();
+  }
+
+  /// Blocks further use of the app until the user refreshes. Unlike a
+  /// dismissible banner, this can't be tapped away or ignored — running
+  /// stale JS is exactly what let duplicate submissions slip through
+  /// before, so once a new deploy is detected there's no path forward
+  /// except reloading to pick it up.
+  void _showUpdateRequiredDialog() {
+    showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => PopScope(
+        canPop: false,
+        child: AlertDialog(
+          title: const Text('⚠️ Update required'),
+          content: const Text(
+            'A new version of Order Logger has been deployed. To avoid '
+            'submitting data with an outdated version of the app, please '
+            'refresh to continue.',
           ),
-        ],
+          actions: [
+            FilledButton.icon(
+              onPressed: () => web.window.location.reload(),
+              icon: const Icon(Icons.refresh),
+              label: const Text('Refresh now'),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -295,8 +312,17 @@ class _OrderLoggerPageState extends State<OrderLoggerPage> {
             parsed!.customerName.trim().toLowerCase();
     if (amountUnchanged && customerUnchanged) {
       setState(() {
+        // ✅ reset everything — the sheet already reflects this data
+        parsed = null;
+        controller.clear();
         isUploading = false;
         status = '⚠ Already logged with the same details — No changes made';
+      });
+      // optional: auto-clear success message after 2 seconds
+      Future.delayed(const Duration(seconds: 2), () {
+        if (mounted) {
+          setState(() => status = '');
+        }
       });
       return;
     }
