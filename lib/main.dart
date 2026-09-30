@@ -11,7 +11,7 @@ import 'version_check.dart';
 const Duration _versionCheckInterval = Duration(minutes: 5);
 
 // Keep in sync with the `version:` field in pubspec.yaml.
-const String appVersion = '1.24.0+1';
+const String appVersion = '1.24.1+1';
 
 void main() {
   tz.initializeTimeZones();
@@ -241,59 +241,7 @@ class _OrderLoggerPageState extends State<OrderLoggerPage> {
 
     final duplicateCheck = await checkDuplicateInvoice(parsed!);
     if (duplicateCheck.isDuplicate) {
-      final existingTotal = duplicateCheck.existingTotal;
-      final existingCustomer = duplicateCheck.existingCustomer;
-      final amountUnchanged = existingTotal != null &&
-          (existingTotal - parsed!.totalDue).abs() < 0.005;
-      final customerUnchanged = existingCustomer != null &&
-          existingCustomer.trim().toLowerCase() ==
-              parsed!.customerName.trim().toLowerCase();
-      if (amountUnchanged && customerUnchanged) {
-        setState(() {
-          isUploading = false;
-          status = '⚠ Already logged with the same details — No changes made';
-        });
-        return;
-      }
-
-      final shouldUpdate = await _confirmDuplicateUpload(
-        existingCustomer,
-        existingTotal,
-      );
-      if (shouldUpdate != true) {
-        setState(() {
-          isUploading = false;
-          status = '⚠ Upload cancelled — duplicate';
-        });
-        return;
-      }
-
-      setState(() {
-        status = '⏳ Updating existing entry...';
-      });
-      try {
-        debugPrint('📤 Updating existing row...');
-        await updateInvoiceRow(parsed!);
-        setState(() {
-          // ✅ reset everything
-          parsed = null;
-          controller.clear();
-          status = '✅ Existing entry updated';
-          isUploading = false;
-        });
-        // optional: auto-clear success message after 2 seconds
-        Future.delayed(const Duration(seconds: 2), () {
-          if (mounted) {
-            setState(() => status = '');
-          }
-        });
-      } catch (e) {
-        setState(() {
-          error = 'Update failed';
-          status = '';
-          isUploading = false;
-        });
-      }
+      await _resolveDuplicate(duplicateCheck);
       return;
     }
 
@@ -302,7 +250,15 @@ class _OrderLoggerPageState extends State<OrderLoggerPage> {
     });
     try {
       debugPrint('📤 Sending upload payload...');
-      await uploadToSheets(parsed!, selectedUploader!);
+      final result = await uploadToSheets(parsed!, selectedUploader!);
+      if (result.isDuplicate) {
+        // Our upfront check missed this — another submission (a retry
+        // after a timeout, or a teammate) raced us and got written first.
+        // The backend caught it at write time instead and wrote nothing;
+        // resolve it exactly like an upfront duplicate.
+        await _resolveDuplicate(result);
+        return;
+      }
       setState(() {
         // ✅ reset everything
         parsed = null;
@@ -310,19 +266,79 @@ class _OrderLoggerPageState extends State<OrderLoggerPage> {
         status = '✅ Upload complete';
         isUploading = false;
       });
-        // optional: auto-clear success message after 2 seconds
-        Future.delayed(const Duration(seconds: 2), () {
-          if (mounted) {
-            setState(() => status = '');
-          }
-        });
-      } catch (e) {
-        setState(() {
-          error = 'Upload failed';
-          status = '';
-          isUploading = false;
-        });
-      }
+      // optional: auto-clear success message after 2 seconds
+      Future.delayed(const Duration(seconds: 2), () {
+        if (mounted) {
+          setState(() => status = '');
+        }
+      });
+    } catch (e) {
+      setState(() {
+        error = 'Upload failed';
+        status = '';
+        isUploading = false;
+      });
+    }
+  }
+
+  /// Shared duplicate-resolution flow: short-circuits if nothing actually
+  /// changed, otherwise confirms with the user and updates the existing
+  /// row. Used both for the upfront duplicate check and for a duplicate
+  /// the backend catches at write time (see uploadToSheets).
+  Future<void> _resolveDuplicate(DuplicateCheckResult duplicateCheck) async {
+    final existingTotal = duplicateCheck.existingTotal;
+    final existingCustomer = duplicateCheck.existingCustomer;
+    final amountUnchanged = existingTotal != null &&
+        (existingTotal - parsed!.totalDue).abs() < 0.005;
+    final customerUnchanged = existingCustomer != null &&
+        existingCustomer.trim().toLowerCase() ==
+            parsed!.customerName.trim().toLowerCase();
+    if (amountUnchanged && customerUnchanged) {
+      setState(() {
+        isUploading = false;
+        status = '⚠ Already logged with the same details — No changes made';
+      });
+      return;
+    }
+
+    final shouldUpdate = await _confirmDuplicateUpload(
+      existingCustomer,
+      existingTotal,
+    );
+    if (shouldUpdate != true) {
+      setState(() {
+        isUploading = false;
+        status = '⚠ Upload cancelled — duplicate';
+      });
+      return;
+    }
+
+    setState(() {
+      status = '⏳ Updating existing entry...';
+    });
+    try {
+      debugPrint('📤 Updating existing row...');
+      await updateInvoiceRow(parsed!);
+      setState(() {
+        // ✅ reset everything
+        parsed = null;
+        controller.clear();
+        status = '✅ Existing entry updated';
+        isUploading = false;
+      });
+      // optional: auto-clear success message after 2 seconds
+      Future.delayed(const Duration(seconds: 2), () {
+        if (mounted) {
+          setState(() => status = '');
+        }
+      });
+    } catch (e) {
+      setState(() {
+        error = 'Update failed';
+        status = '';
+        isUploading = false;
+      });
+    }
   }
 
   Future<bool?> _confirmDuplicateUpload(

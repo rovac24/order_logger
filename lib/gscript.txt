@@ -12,33 +12,68 @@ function doGet(e) {
   }
 
   if (e.parameter.action === 'updateInvoiceRow') {
-    const updated = updateInvoiceRow(
+    const updated = withLock(() => updateInvoiceRow(
       sheet,
       e.parameter.invoice || '',
       e.parameter.customer || '',
       Number(e.parameter.total || 0)
-    );
+    ));
 
     return ContentService
       .createTextOutput(JSON.stringify({ updated: updated }))
       .setMimeType(ContentService.MimeType.JSON);
   }
 
-  sheet.appendRow([
-    e.parameter.invoice || '',
-    e.parameter.state || '',
-    e.parameter.customer || '',
-    e.parameter.edits || '',
-    e.parameter.submittedBy || '',
-    e.parameter.dateUtc || '',
-    Number(e.parameter.total || 0),
-    e.parameter.payTo || '',
-    e.parameter.license || '',
-  ]);
+  // Default / legacy path: submit a new order. Re-checks for a duplicate
+  // right before writing (inside the same lock as the write itself), since
+  // the client's own upfront checkDuplicate call happened as a separate,
+  // earlier request and could have raced with another submission for the
+  // same invoice in the meantime.
+  const result = withLock(() => submitOrder(sheet, e.parameter));
 
   return ContentService
-    .createTextOutput('OK')
-    .setMimeType(ContentService.MimeType.TEXT);
+    .createTextOutput(JSON.stringify(result))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+
+// Serializes access to the block passed in, so two concurrent doGet
+// executions can never interleave a duplicate check with a write. Waits up
+// to 30s for another execution to finish before giving up.
+function withLock(fn) {
+  const lock = LockService.getScriptLock();
+  lock.waitLock(30000);
+  try {
+    return fn();
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+function submitOrder(sheet, params) {
+  const invoice = params.invoice || '';
+  const existingRow = findMatchingRow(sheet, invoice);
+  if (existingRow !== null) {
+    const rowValues = sheet.getRange(existingRow, 1, 1, 7).getValues()[0]; // columns A-G
+    return {
+      status: 'duplicate',
+      existingCustomer: String(rowValues[2] || ''),
+      existingTotal: Number(rowValues[6]) || 0,
+    };
+  }
+
+  sheet.appendRow([
+    invoice,
+    params.state || '',
+    params.customer || '',
+    params.edits || '',
+    params.submittedBy || '',
+    params.dateUtc || '',
+    Number(params.total || 0),
+    params.payTo || '',
+    params.license || '',
+  ]);
+
+  return { status: 'ok' };
 }
 
 // Only scans the most recent MAX_DUPLICATE_CHECK_ROWS rows instead of the
@@ -47,8 +82,8 @@ function doGet(e) {
 const MAX_DUPLICATE_CHECK_ROWS = 7000;
 
 // Column A = invoice. Compares case/whitespace-insensitively. Searches
-// backward so ties resolve to the most recent row. Shared by findDuplicate
-// and updateInvoiceRow.
+// backward so ties resolve to the most recent row. Shared by findDuplicate,
+// submitOrder and updateInvoiceRow.
 function findMatchingRow(sheet, invoice) {
   const normalizedInvoice = invoice.trim().toLowerCase();
 
