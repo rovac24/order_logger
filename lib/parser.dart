@@ -123,8 +123,8 @@ ParsedInvoice parseInvoice(String text) {
     // ----------------------------
     if (invoiceNumber.isEmpty) {
 
-      //Flower Moves NV
-      if (line.startsWith('ORD-NV')) {
+      //Flower Moves NY
+      if (line.startsWith('ORD-NY')) {
         //Take all first line as order number
         final invoiceNumberMatch = RegExp(r'-([A-Z]\d+)$').firstMatch(line);
         if (invoiceNumberMatch != null) {
@@ -134,9 +134,9 @@ ParsedInvoice parseInvoice(String text) {
         if (payTo.isEmpty) {
           payTo = 'GTI';
         }
-        // Automatically set State to NV
+        // Automatically set State to NY
         if (state.isEmpty) {
-          state = 'NV';
+          state = 'NY';
         }
         //Set Datetime to current
         orderPlacedDate = formatUtcPretty(DateTime.now().toUtc());
