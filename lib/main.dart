@@ -71,6 +71,7 @@ class _OrderLoggerPageState extends State<OrderLoggerPage> {
   final List<String> sopsteam = [
   'Angel Daniel Di Alonzo Torres',
   'Arturo Juarez',
+  'Ayubii Vargas',
   'David Salazar',
   'Dusan Markovic',
   'Ernesto Salazar Alejos',
